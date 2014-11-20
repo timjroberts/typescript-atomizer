@@ -1,0 +1,4 @@
+**/*.js
+**/*.js.map
+!gruntfile.js
+node_modules

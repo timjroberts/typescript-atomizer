@@ -1,0 +1,29 @@
+{
+    "name": "typescript-atomizer",
+    "version": "0.0.0",
+    "description": "An Atom plugin that provides TypeScript language support and tooling.",
+    "keywords": [
+        "typescript",
+        "ts",
+        "atom"
+    ],
+    "author": {
+        "name": "Tim Roberts",
+        "url": "http://www.timjroberts.com"
+    },
+    "license": "MIT",
+    "engines": {
+        "atom": "*",
+        "node": "*"
+    },
+    "main": "./lib/Main.js",
+    "dependencies": {
+        "typescript-atomizer-typings": "*"
+    },
+    "devDependencies": {
+        "jasmine": "*",
+        "grunt-jasmine-node": "*",
+        "grunt-contrib-copy": "*",
+        "grunt-typescript": "*"
+    }
+}
