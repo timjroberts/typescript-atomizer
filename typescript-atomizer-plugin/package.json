@@ -18,12 +18,15 @@
     },
     "main": "./lib/Main.js",
     "dependencies": {
-        "typescript-atomizer-typings": "*"
+        "rx": "*",
+        "typescript-atomizer-typings": "*",
+        "atomizer-core": "*"
     },
     "devDependencies": {
         "jasmine": "*",
         "grunt-jasmine-node": "*",
         "grunt-contrib-copy": "*",
+        "grunt-contrib-clean": "*",
         "grunt-typescript": "*"
     }
 }

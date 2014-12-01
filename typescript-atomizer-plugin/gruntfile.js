@@ -8,10 +8,21 @@ function getAtomRootPackagesPath() {
     throw new Error("Unsupported platform...");
 }
 
+function getPluginPackagableNodeModuleGlobs() {
+    var globs = [];
+
+    for (var dependencyName in package.dependencies) {
+        globs.push("node_modules/" + dependencyName + "/**");
+    }
+
+    return globs;
+}
+
 module.exports = function(grunt)
     {
         grunt.loadNpmTasks("grunt-typescript");
         grunt.loadNpmTasks("grunt-contrib-copy");
+        grunt.loadNpmTasks("grunt-contrib-clean");
         grunt.loadNpmTasks("grunt-jasmine-node");
 
         grunt.initConfig(
@@ -33,7 +44,7 @@ module.exports = function(grunt)
                         "lib/Bootstrap/**",
                         "spec/**/*.js",
                         "package.json"
-                    ],
+                    ].concat(getPluginPackagableNodeModuleGlobs()),
 
                 typescript:
                     {
@@ -54,6 +65,18 @@ module.exports = function(grunt)
                         specs: [ "spec/" ]
                     },
 
+                clean:
+                    {
+                        pluginOutput:
+                            {
+                                src: [ getAtomRootPackagesPath() ],
+                                options:
+                                    {
+                                        force: true
+                                    }
+                            }
+                    },
+
                 copy:
                     {
                         pluginOutput:
@@ -67,6 +90,6 @@ module.exports = function(grunt)
 
         grunt.registerTask("build",  [ "typescript:build" ]);
         grunt.registerTask("test",   [ "jasmine_node" ]);
-        grunt.registerTask("deploy", [ "copy" ]);
+        grunt.registerTask("deploy", [ "clean:pluginOutput", "copy:pluginOutput" ]);
 
     };
