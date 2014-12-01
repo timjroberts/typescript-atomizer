@@ -113,14 +113,7 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
 
         typescriptDocument.addReference();
 
-        var sourceFile: ts.SourceFile = typescriptDocument.getSourceFile(compilationSettings.target);
-
-        var w: any = sourceFile;
-
-        w.getVersion = function() { return version; }
-        w.isOpen = function() { return isOpen; }
-
-        return w;
+        return typescriptDocument.getSourceFile(compilationSettings.target);
     }
 
     /**
@@ -131,14 +124,7 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
 
         TypeScriptDocumentRegistry.checkDocument(filename, typescriptDocument);
 
-        var sourceFile: ts.SourceFile = typescriptDocument.getSourceFile(compilationSettings.target);
-
-        var w: any = sourceFile;
-
-        w.getVersion = function() { return version; }
-        w.isOpen = function() { return isOpen; }
-
-        return w;
+        return typescriptDocument.getSourceFile(compilationSettings.target);
     }
 
     /**
