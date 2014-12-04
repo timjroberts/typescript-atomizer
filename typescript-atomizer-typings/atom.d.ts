@@ -78,6 +78,12 @@ interface Marker {
     getScreenRange(): Range;
 }
 
+interface Cursor {
+    getScreenPosition(): Point;
+
+    onDidChangePosition(callback: (event: any) => void): Disposable;
+}
+
 /**
  * Represents all essential editing state for a single TextBuffer, including cursor and selection
  * position, folds, and soft wraps.
@@ -99,6 +105,8 @@ interface TextEditor {
      * Returns the text contained in the underlying text buffer.
      */
     getText(): string;
+
+    getLastCursor(): Cursor;
 
     /**
      * Returns the underlying text buffer.
@@ -160,6 +168,11 @@ interface Disposable {
     dispose(): void;
 }
 
+interface StatusBar {
+    prependLeft(view: HTMLElement);
+    appendLeft(view: HTMLElement);
+}
+
 /**
  * The top-level view for the entire Atom window.
  *
@@ -173,6 +186,8 @@ interface WorkspaceView {
      * @returns {Subscription} A subscription object with an 'off' method that you can call to unregister the callback.
      */
     eachEditorView(callback: (ev: TextEditorView) => void): Subscription;
+
+    statusBar: StatusBar;
 }
 
 /**
@@ -198,6 +213,15 @@ interface PackageManager {
 }
 
 /**
+ * ViewRegistry handles the association between model and view types in Atom.
+ */
+interface ViewRegistry {
+    addViewProvider(providerSpec: { modelConstructor: Function; viewConstructor?: Function; createView?: Function }): Disposable;
+
+    getView(object: any): HTMLElement;
+}
+
+/**
  * Atom global for dealing with packages, themes, menus, and the window.
  *
  * An instance of {AtomGlobal} is always available via the 'atom' global property.
@@ -211,7 +235,12 @@ interface AtomGlobal {
     /**
      * Gets the global {PackageManager}.
      */
-    packages:PackageManager;
+    packages: PackageManager;
+
+    /**
+     * Get the {ViewRegistry}.
+     */
+    views: ViewRegistry;
 }
 
 declare var atom: AtomGlobal;

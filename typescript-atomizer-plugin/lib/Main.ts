@@ -8,12 +8,16 @@ import Rx = require("rx");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
 import TypeScriptWorkspace = require("./TypeScriptWorkspace");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
+import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
+import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
 
 /**
  * Provides the entry point for the TypeScript Atomizer plugin.
  */
 module TypeScriptAtomizerPlugin {
+    var disposableViewProviders: Array<Disposable>;
     var documentRegistry: TypeScriptDocumentRegistry;
+    var statusBar: TypeScriptDiagnosticStatusBar;
     var typescriptWorkspace: TypeScriptWorkspace;
 
     var onTypeScriptTextEditorOpened: Rx.Subject<TypeScriptTextEditor>;
@@ -25,10 +29,12 @@ module TypeScriptAtomizerPlugin {
     export function activate(): void {
         TypeScriptServices.initialize();
 
+        disposableViewProviders = registerViewProviders();
+
         onTypeScriptTextEditorOpened = new Rx.Subject<TypeScriptTextEditor>();
 
         documentRegistry = new TypeScriptDocumentRegistry(getPackageRootPath());
-        typescriptWorkspace = new TypeScriptWorkspace(onTypeScriptTextEditorOpened);
+        typescriptWorkspace = new TypeScriptWorkspace(atom.workspaceView, atom.views, onTypeScriptTextEditorOpened);
 
         openedTypeScriptTextEditorsSubscription =
             createTextEditorViewOpenedObservable(atom.workspaceView)
@@ -50,8 +56,29 @@ module TypeScriptAtomizerPlugin {
         onTypeScriptTextEditorOpened.onCompleted();
         openedTypeScriptTextEditorsSubscription.dispose();
 
+        disposableViewProviders.forEach((disposable: Disposable) => { disposable.dispose(); });
+
         documentRegistry = null;
+        statusBar = null;
         typescriptWorkspace = null;
+        disposableViewProviders = null;
+    }
+
+    /**
+     * Registers the view providers for the global level views and their associated models with the Atom
+     * view registry.
+     *
+     * @returns {Array<Disposable>} An array of disposable objects that can be used to remove the view
+     * providers from the Atom view registry.
+     */
+    function registerViewProviders(): Array<Disposable> {
+        var statusBarViewProvider =
+            atom.views.addViewProvider({
+                    modelConstructor: TypeScriptDiagnosticStatusBar,
+                    createView: () => { return new TypeScriptDiagnosticStatusBarView() }
+                });
+
+        return [ statusBarViewProvider ];
     }
 
     /**
