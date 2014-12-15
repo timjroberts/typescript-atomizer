@@ -17,10 +17,11 @@ import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatus
 module TypeScriptAtomizerPlugin {
     var disposableViewProviders: Array<Disposable>;
     var documentRegistry: TypeScriptDocumentRegistry;
-    var statusBar: TypeScriptDiagnosticStatusBar;
     var typescriptWorkspace: TypeScriptWorkspace;
 
     var onTypeScriptTextEditorOpened: Rx.Subject<TypeScriptTextEditor>;
+    var onTextEditorChanged: Rx.Subject<TextEditor>;
+    var textEditorChangedSubscription: Rx.IDisposable;
     var openedTypeScriptTextEditorsSubscription: Rx.IDisposable;
 
     /**
@@ -32,20 +33,27 @@ module TypeScriptAtomizerPlugin {
         disposableViewProviders = registerViewProviders();
 
         onTypeScriptTextEditorOpened = new Rx.Subject<TypeScriptTextEditor>();
+        onTextEditorChanged = new Rx.Subject<TextEditor>();
 
         documentRegistry = new TypeScriptDocumentRegistry(getPackageRootPath());
-        typescriptWorkspace = new TypeScriptWorkspace(atom.workspaceView, atom.views, onTypeScriptTextEditorOpened);
+        typescriptWorkspace = new TypeScriptWorkspace(atom, onTypeScriptTextEditorOpened, onTextEditorChanged);
 
         openedTypeScriptTextEditorsSubscription =
-            createTextEditorViewOpenedObservable(atom.workspaceView)
-                .filter((ev: TextEditorView, idx: number, obs: Rx.Observable<TextEditorView>): boolean => {
-                        return ev.getModel().getGrammar().name === "TypeScript";
+            createTextEditorOpenedObservable(atom.workspace)
+                .filter((editor: TextEditor, idx: number, obs: Rx.Observable<TextEditor>): boolean => {
+                        return editor.getGrammar().name === "TypeScript";
                     })
-                .select((ev: TextEditorView, idx: number, obs: Rx.Observable<TextEditorView>): TypeScriptTextEditor => {
-                        return new TypeScriptTextEditor(ev.getModel(), documentRegistry);
+                .select((editor: TextEditor, idx: number, obs: Rx.Observable<TextEditor>): TypeScriptTextEditor => {
+                        return new TypeScriptTextEditor(editor, documentRegistry);
                     })
                 .subscribe((tsTextEditor: TypeScriptTextEditor) => {
                         onTypeScriptTextEditorOpened.onNext(tsTextEditor);
+                    });
+
+        textEditorChangedSubscription =
+            createActivePaneItemChangedObservable(atom.workspace)
+                .subscribe((item: Object) => {
+                        onTextEditorChanged.onNext(atom.workspace.getActiveTextEditor());
                     });
     }
 
@@ -55,11 +63,12 @@ module TypeScriptAtomizerPlugin {
     export function deactivate(): void {
         onTypeScriptTextEditorOpened.onCompleted();
         openedTypeScriptTextEditorsSubscription.dispose();
+        onTextEditorChanged.onCompleted();
+        textEditorChangedSubscription.dispose();
 
         disposableViewProviders.forEach((disposable: Disposable) => { disposable.dispose(); });
 
         documentRegistry = null;
-        statusBar = null;
         typescriptWorkspace = null;
         disposableViewProviders = null;
     }
@@ -93,25 +102,47 @@ module TypeScriptAtomizerPlugin {
     }
 
     /**
-     * Returns an observable stream of opened text editors by subscribing to the global Atom WorkspaceView.
+     * Returns an observable stream of opened text editors by subscribing to the global Atom Workspace.
      *
-     * @param {WorkspaceView} workspaceView - The Atom workspace view.
-     * @returns {Rx.Observable<TextEditorView>} An observable stream of opened text editor views.
+     * @param {Workspace} workspace - The Atom workspace.
+     * @returns {Rx.Observable<TextEditor>} An observable stream of opened text editors.
      */
-    function createTextEditorViewOpenedObservable(workspaceView: WorkspaceView): Rx.Observable<TextEditorView> {
+    function createTextEditorOpenedObservable(workspace: Workspace): Rx.Observable<TextEditor> {
         var addHandler =
             (h) => {
-                return workspaceView.eachEditorView(h);
+                return workspace.observeTextEditors(h);
             };
 
         var removeHandler =
             (...args) => {
-                var subscription = <Subscription>args[1];
+                var subscription = <Disposable>args[1];
 
-                subscription.off();
+                subscription.dispose();
             };
 
-        return Rx.Observable.fromEventPattern<TextEditorView>(addHandler, removeHandler);
+        return Rx.Observable.fromEventPattern<TextEditor>(addHandler, removeHandler);
+    }
+
+    /**
+     * Returns an observable stream of acivate pane items in the global Atom Workspace.
+     *
+     * @param {Workspace} workspace - The Atom workspace.
+     * @returns {Rx.Observable<Object>} An observable stream of active pane items.
+     */
+    function createActivePaneItemChangedObservable(workspace: Workspace): Rx.Observable<Object> {
+        var addHandler =
+        (h) => {
+            return workspace.onDidChangeActivePaneItem(h);
+        };
+
+        var removeHandler =
+        (...args) => {
+            var subscription = <Disposable>args[1];
+
+            subscription.dispose();
+        };
+
+        return Rx.Observable.fromEventPattern<Object>(addHandler, removeHandler);
     }
 }
 

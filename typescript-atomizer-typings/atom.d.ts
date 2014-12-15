@@ -174,6 +174,23 @@ interface StatusBar {
 }
 
 /**
+ * Represents the state of the user interface for the entire Atom window.
+ */
+interface Workspace {
+    /**
+     * Invoke the given callback with all current and future text editors in the workspace.
+     *
+     * @param {callback: (editor: TextEditor) => void} callback - The callback to invoke for each {TextEditor}.
+     * @returns {Disposable} A disposable on which 'dispose' can be called to unsubscribe.
+     */
+    observeTextEditors(callback: (editor: TextEditor) => void): Disposable;
+
+    onDidChangeActivePaneItem(callback: (item: any) => void): Disposable;
+
+    getActiveTextEditor(): TextEditor;
+}
+
+/**
  * The top-level view for the entire Atom window.
  *
  * Access to {WorkspaceView} can be made via {AtomGlobal#workspaceView}.
@@ -227,6 +244,11 @@ interface ViewRegistry {
  * An instance of {AtomGlobal} is always available via the 'atom' global property.
  */
 interface AtomGlobal {
+    /**
+     * Gets the {Workspace} that represents the state of the user interface for the entire Atom window.
+     */
+    workspace: Workspace;
+
     /**
      * Gets the {WorkspaceView} that represents the current Atom window.
      */

@@ -7,16 +7,20 @@ var elementPrototype: ModelBasedHTMLElement<TypeScriptDiagnosticStatusBar> = Obj
 
 elementPrototype.createdCallback =
     function() {
+        this.statusBarElementDiv = document.createElement("div");
+
         this.errorStatusDiv = document.createElement("span");
         this.errorStatusDiv.innerHTML = "&nbsp;&nbsp;"
         this.errorStatusDiv.classList.add("text-smaller", "highlight-success");
 
-        this.appendChild(this.errorStatusDiv);
+        this.statusBarElementDiv.appendChild(this.errorStatusDiv);
 
         this.highlightedErrorDiv = document.createElement("span");
-        this.highlightedErrorDiv.classList.add("text-smaller", "text-error");
+        this.highlightedErrorDiv.classList.add("text-error");
 
-        this.appendChild(this.highlightedErrorDiv);
+        this.statusBarElementDiv.appendChild(this.highlightedErrorDiv);
+
+        this.appendChild(this.statusBarElementDiv);
     }
 
 elementPrototype.attachedCallback =
@@ -26,6 +30,10 @@ elementPrototype.attachedCallback =
 
 elementPrototype.setModel =
     function(statusBar: TypeScriptDiagnosticStatusBar) {
+        statusBar.onVisibilityChanged.subscribe((visible: boolean) => {
+                this.statusBarElementDiv.hidden = !visible;
+            });
+
         statusBar.onErrorStateChanged.subscribe((errorState: boolean) => {
                 if (errorState) {
                     this.errorStatusDiv.classList.remove("highlight-success");
