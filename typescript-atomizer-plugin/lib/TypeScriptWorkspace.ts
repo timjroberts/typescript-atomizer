@@ -28,12 +28,12 @@ class TypeScriptTextEditorStatusBarState {
     }
 
     /**
-     * Gets a flag indicating whether the TypeScript text editor has errors.
+     * Gets a flag indicating whether the TypeScript text editor has diagnostic errors.
      */
     public get inError(): boolean { return this._inError; }
 
     /**
-     * Gets a message to display.
+     * Gets a message to display (usually a TypeScript diagnostic error).
      */
     public get message(): string { return this._currentMessage !== null ? this._currentMessage : this._defaultMessage; }
     /**
@@ -64,7 +64,7 @@ class TypeScriptWorkspace {
      *
      * @param {AtomGlobal} atom - The Atom global.
      * @param {Rx.Observable<TypeScriptTextEditor>} onTypeScriptTextEditorOpened - An observable stream of opened TypeScript text editors.
-     * @param {Rx.Observable<TextEditor>} onTypeScriptTextEditorOpened - An observable stream of changes to the current text editor.
+     * @param {Rx.Observable<TextEditor>} onTextEditorChanged - An observable stream of changes representing the current text editor.
      * text editors.
      */
     constructor(atom: AtomGlobal, onTypeScriptTextEditorOpened: Rx.Observable<TypeScriptTextEditor>, onTextEditorChanged: Rx.Observable<TextEditor>) {
@@ -94,8 +94,16 @@ class TypeScriptWorkspace {
 
         tsTextEditor.onDiagnosticSelected
             .subscribe((diagnostic) => this.onTypeScriptDiagnosticSelected.call(this, diagnostic));
+
+        tsTextEditor.onClosed
+            .subscribe((tsTextEditor: TypeScriptTextEditor) => this.onTypeScriptTextEditorClosed.call(this, tsTextEditor));
     }
 
+    /**
+     * Called when a text editor has been given focus in the Atom workspace.
+     *
+     * @param {TextEditor} textEditor - The text editor that has received focus in the Atom workspace.
+     */
     private onTextEditorChanged(textEditor: TextEditor): void {
         var statusBar: TypeScriptDiagnosticStatusBar = this.getStatusBar();
 
@@ -136,6 +144,15 @@ class TypeScriptWorkspace {
     }
 
     /**
+     * Called when a TypeScript text editor has been closed in the Atom workspace.
+     *
+     * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor that has been closed.
+     */
+    private onTypeScriptTextEditorClosed(tsTextEditor: TypeScriptTextEditor): void {
+        this._textEditorStates[tsTextEditor.path] = undefined;
+    }
+
+    /**
      * Updates the TypeScript diagnostic status bar with the supplied state.
      *
      * @param {TypeScriptTextEditorStatusBarState} state - The state which will be used to update the status bar. If not
@@ -146,7 +163,7 @@ class TypeScriptWorkspace {
 
         var statusBar: TypeScriptDiagnosticStatusBar = this.getStatusBar();
 
-        statusBar.error = state.inError;
+        statusBar.inError = state.inError;
         statusBar.message = state.message;
 
         statusBar.show();

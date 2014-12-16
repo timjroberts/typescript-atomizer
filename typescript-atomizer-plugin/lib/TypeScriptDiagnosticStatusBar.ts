@@ -9,7 +9,7 @@ class TypeScriptDiagnosticStatusBar {
     private _onErrorStateChanged: Rx.Subject<boolean>;
     private _onMessageChanged: Rx.Subject<string>;
     private _onVisibilityChanged: Rx.Subject<boolean>;
-    private _error: boolean;
+    private _inError: boolean;
     private _message: string;
 
     /**
@@ -24,12 +24,12 @@ class TypeScriptDiagnosticStatusBar {
     /**
      * Gets an indicator representing whether the status bar is indicating a document that is in error.
      */
-    public get error(): boolean { return this._error; }
+    public get inError(): boolean { return this._inError; }
     /**
      * Sets an indicator represening whether the status bar is indicating a document that is in error.
      */
-    public set error(value: boolean) {
-        this._error = value;
+    public set inError(value: boolean) {
+        this._inError = value;
         this._onErrorStateChanged.onNext(value);
     }
 
