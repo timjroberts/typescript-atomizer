@@ -44,6 +44,9 @@ declare class Point {
      * @param {number} columm - The column number.
      */
     constructor(row: number, column: number);
+
+    row: number;
+    column: number;
 }
 
 /**
@@ -84,6 +87,10 @@ interface Cursor {
     onDidChangePosition(callback: (event: any) => void): Disposable;
 }
 
+interface ScopeDescriptor {
+
+}
+
 /**
  * Represents all essential editing state for a single TextBuffer, including cursor and selection
  * position, folds, and soft wraps.
@@ -113,7 +120,12 @@ interface TextEditor {
      */
     getBuffer(): TextBuffer;
 
-    screenPositionForBufferPosition(position: Point): Point;
+    getCursorBufferPosition(): Point;
+
+    scopeDescriptorForBufferPosition(p1: any): ScopeDescriptor;
+
+    screenPositionForBufferPosition(bufferPosition: Point): Point;
+    screenPositionForBufferPosition(bufferPosition: Array<number>): Point;
 
     markBufferRange(points: Point[], options: any): Marker;
     markScreenRange(points: Point[], options: any): Marker;
@@ -239,6 +251,15 @@ interface ViewRegistry {
 }
 
 /**
+ * Used to access all of Atom's configuration details.
+ */
+interface Config {
+    get(scopeDescriptor?: ScopeDescriptor, keyPath?: string): any;
+
+    set(scopeDescriptor?: ScopeDescriptor, keyPath?: string, value?: any);
+}
+
+/**
  * Atom global for dealing with packages, themes, menus, and the window.
  *
  * An instance of {AtomGlobal} is always available via the 'atom' global property.
@@ -263,6 +284,8 @@ interface AtomGlobal {
      * Get the {ViewRegistry}.
      */
     views: ViewRegistry;
+
+    config: Config;
 }
 
 declare var atom: AtomGlobal;

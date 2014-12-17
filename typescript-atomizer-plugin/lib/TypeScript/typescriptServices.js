@@ -32501,7 +32501,8 @@ var ts;
         SourceFileObject.prototype.getSyntaxTree = function () {
             if (!this.syntaxTree) {
                 var start = new Date().getTime();
-                this.syntaxTree = TypeScript.Parser.parse(this.filename, TypeScript.SimpleText.fromScriptSnapshot(this.scriptSnapshot), this.languageVersion, this.isDeclareFile());
+                //this.syntaxTree = TypeScript.Parser.parse(this.filename, TypeScript.SimpleText.fromScriptSnapshot(this.scriptSnapshot), this.languageVersion, this.isDeclareFile());
+                this.syntaxTree = TypeScript.Parser.parse(this.filename, TypeScript.SimpleText.fromScriptSnapshot(TypeScript.ScriptSnapshot.fromString(this.text)), this.languageVersion, this.isDeclareFile());
                 var time = new Date().getTime() - start;
             }
             return this.syntaxTree;

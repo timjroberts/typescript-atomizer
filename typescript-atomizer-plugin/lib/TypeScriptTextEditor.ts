@@ -50,11 +50,13 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                 .subscribe(() => {
                         this._onContentsChanged.onNext(this);
 
-                        this.performDiagnostics.call(this);
+                        this.updateDiagnostics.call(this);
+                        this.updateEditorCompletions.call(this);
+
                         this._onDiagnosticsChanged.onNext(this);
                     });
 
-        var oncreateOnCursorChangedPositionSubscription =
+        var onDiagnosticSelectionChangedSubscription =
             TypeScriptTextEditor.createOnCursorChangedPositionObservable(this._textEditor)
                 .select((_, idx: number, obs: Rx.Observable<void>) => {
                         var cursorPoint: Point = this._textEditor.getLastCursor().getScreenPosition();
@@ -76,12 +78,11 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                         this._onClosed.onNext(this);
 
                         this._onDiagnosticsChanged.onCompleted();
-
                         this._onContentsChanged.onCompleted();
                         this._onClosed.onCompleted();
 
                         onContentsChangedSubscription.dispose();
-                        oncreateOnCursorChangedPositionSubscription.dispose();
+                        onDiagnosticSelectionChangedSubscription.dispose();
                         onDestroySubscription.dispose();
 
                         this.disposeCurrentDiagnosticMarkers();
@@ -255,7 +256,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * Requests diagnostics from the underlying TypeScript language services for the current TypeScript text
      * editor and creates markers for any diagnostic message returned.
      */
-    private performDiagnostics(): void {
+    private updateDiagnostics(): void {
         this.disposeCurrentDiagnosticMarkers();
 
         this._diagnostics = this._languageService.getSemanticDiagnostics(this._normalizedPath);
@@ -285,6 +286,26 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                 this._textEditor.decorateMarker(diagnosticMarker, { type: "highlight", class: "typescript-error" });
             });
 
+    }
+
+    /**
+     * Requests code completion entries from the underlying TypeScript language services for the current cursor position and
+     * updates the global Atom configuration setting where the AutoComplete plugin can find them.
+     */
+    private updateEditorCompletions(): void {
+        var cursorPosition: Point = this._textEditor.getCursorBufferPosition();
+        var cursorScope: ScopeDescriptor = this._textEditor.scopeDescriptorForBufferPosition(cursorPosition);
+
+        var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
+        var typeScriptPosition = bufferLineStartPositions[cursorPosition.row] + cursorPosition.column;
+
+        var completionInfo: ts.CompletionInfo = this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
+
+        var completionEntries: string[] = completionInfo.isMemberCompletion
+            ? completionInfo.entries.map((entry: ts.CompletionEntry) => entry.name)
+            : [ ];
+
+        atom.config.set(cursorScope, "editor.completions", completionEntries);
     }
 
     /**

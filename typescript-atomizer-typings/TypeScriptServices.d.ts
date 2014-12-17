@@ -148,6 +148,16 @@ declare module ts {
         releaseDocument(filename: string, compilationSettings: CompilerOptions): void
     }
 
+    export interface CompletionEntry {
+        name: string;
+        kind: string;            // see ScriptElementKind
+        kindModifiers: string;   // see ScriptElementKindModifier, comma separated
+    }
+    export interface CompletionInfo {
+        isMemberCompletion: boolean;
+        entries: CompletionEntry[];
+    }
+
     export interface CancellationToken {
         isCancellationRequested(): boolean;
     }
@@ -170,6 +180,8 @@ declare module ts {
     export interface LanguageService {
         getSyntacticDiagnostics(fileName: string): Diagnostic[];
         getSemanticDiagnostics(fileName: string): Diagnostic[];
+
+        getCompletionsAtPosition(fileName: string, position: number, isMemberCompletion: boolean): CompletionInfo;
 
         dispose(): void;
     }
