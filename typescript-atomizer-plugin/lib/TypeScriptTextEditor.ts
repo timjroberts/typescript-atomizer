@@ -299,11 +299,18 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
         var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
         var typeScriptPosition = bufferLineStartPositions[cursorPosition.row] + cursorPosition.column;
 
-        var completionInfo: ts.CompletionInfo = this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
+        var completionEntries: string[];
 
-        var completionEntries: string[] = completionInfo.isMemberCompletion
-            ? completionInfo.entries.map((entry: ts.CompletionEntry) => entry.name)
-            : [ ];
+        try {
+            var completionInfo: ts.CompletionInfo = this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
+
+            completionEntries = completionInfo.isMemberCompletion
+                ? completionInfo.entries.map((entry: ts.CompletionEntry) => entry.name)
+                : [ ];
+        }
+        catch (error) {
+            completionEntries = [ ];
+        }
 
         atom.config.set(cursorScope, "editor.completions", completionEntries);
     }
