@@ -98,6 +98,8 @@ interface ScopeDescriptor {
  * A single TextBuffer can be belong to multiple editors.
  */
 interface TextEditor {
+    mini: boolean;
+
     /**
      * Returns the grammar that the editor is using.
      */

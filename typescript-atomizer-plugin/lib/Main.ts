@@ -41,7 +41,7 @@ module TypeScriptAtomizerPlugin {
         openedTypeScriptTextEditorsSubscription =
             createTextEditorOpenedObservable(atom.workspace)
                 .filter((editor: TextEditor, idx: number, obs: Rx.Observable<TextEditor>): boolean => {
-                        return editor.getGrammar().name === "TypeScript";
+                        return !editor.mini && editor.getGrammar().name === "TypeScript";
                     })
                 .select((editor: TextEditor, idx: number, obs: Rx.Observable<TextEditor>): TypeScriptTextEditor => {
                         return new TypeScriptTextEditor(editor, documentRegistry);
