@@ -38,6 +38,7 @@ module.exports = function(grunt)
                 pluginPackageFiles:
                     [
                         "grammars/*",
+                        "keymaps/*",
                         "stylesheets/*",
                         "lib/**/*.js",
                         "lib/TypeScript/**",

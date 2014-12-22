@@ -51,7 +51,6 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                         this._onContentsChanged.onNext(this);
 
                         this.updateDiagnostics.call(this);
-                        this.updateEditorCompletions.call(this);
 
                         this._onDiagnosticsChanged.onNext(this);
                     });
@@ -242,6 +241,23 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
     }
 
     /**
+     * Retrieves the TypeScript code completion information from the current cursor position.
+     */
+    public getEditorCodeCompletionsForCursor(): ts.CompletionInfo {
+        var cursorPosition: Point = this._textEditor.getCursorBufferPosition();
+        var cursorScope: ScopeDescriptor = this._textEditor.scopeDescriptorForBufferPosition(cursorPosition);
+
+        var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
+        var typeScriptPosition = bufferLineStartPositions[cursorPosition.row] + cursorPosition.column;
+
+        try {
+            return this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
+        }
+        catch (error)
+        { }
+    }
+
+    /**
      * Destroys the existing markers representing TypeScript diagnostic messages.
      */
     private disposeCurrentDiagnosticMarkers(): void {
@@ -286,33 +302,6 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                 this._textEditor.decorateMarker(diagnosticMarker, { type: "highlight", class: "typescript-error" });
             });
 
-    }
-
-    /**
-     * Requests code completion entries from the underlying TypeScript language services for the current cursor position and
-     * updates the global Atom configuration setting where the AutoComplete plugin can find them.
-     */
-    private updateEditorCompletions(): void {
-        var cursorPosition: Point = this._textEditor.getCursorBufferPosition();
-        var cursorScope: ScopeDescriptor = this._textEditor.scopeDescriptorForBufferPosition(cursorPosition);
-
-        var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
-        var typeScriptPosition = bufferLineStartPositions[cursorPosition.row] + cursorPosition.column;
-
-        var completionEntries: string[];
-
-        try {
-            var completionInfo: ts.CompletionInfo = this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
-
-            completionEntries = completionInfo.isMemberCompletion
-                ? completionInfo.entries.map((entry: ts.CompletionEntry) => entry.name)
-                : [ ];
-        }
-        catch (error) {
-            completionEntries = [ ];
-        }
-
-        atom.config.set(cursorScope, "editor.completions", completionEntries);
     }
 
     /**

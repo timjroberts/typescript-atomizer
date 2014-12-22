@@ -10,6 +10,7 @@ import TypeScriptWorkspace = require("./TypeScriptWorkspace");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
+import TypeScriptTextEditorCodeCompletionsProvider = require("./TypeScriptTextEditorCodeCompletionsProvider");
 
 /**
  * Provides the entry point for the TypeScript Atomizer plugin.
@@ -24,11 +25,15 @@ module TypeScriptAtomizerPlugin {
     var textEditorChangedSubscription: Rx.IDisposable;
     var openedTypeScriptTextEditorsSubscription: Rx.IDisposable;
 
+    var autoCompletePlusPackageModule: any;
+
     /**
      * Called by Atom to activate the plugin.
      */
     export function activate(): void {
         TypeScriptServices.initialize();
+
+        loadAutoCompletePackageModule();
 
         disposableViewProviders = registerViewProviders();
 
@@ -44,7 +49,19 @@ module TypeScriptAtomizerPlugin {
                         return !editor.mini && editor.getGrammar().name === "TypeScript";
                     })
                 .select((editor: TextEditor, idx: number, obs: Rx.Observable<TextEditor>): TypeScriptTextEditor => {
-                        return new TypeScriptTextEditor(editor, documentRegistry);
+                        var tsTextEditor = new TypeScriptTextEditor(editor, documentRegistry);
+
+                        if (autoCompletePlusPackageModule) {
+                            var provider = new TypeScriptTextEditorCodeCompletionsProvider(tsTextEditor);
+
+                            autoCompletePlusPackageModule.registerProviderForEditor(provider, editor);
+
+                            tsTextEditor.onClosed.subscribe(() => {
+                                if (autoCompletePlusPackageModule) autoCompletePlusPackageModule.unregisterProvider(provider);
+                            });
+                        }
+
+                        return tsTextEditor;
                     })
                 .subscribe((tsTextEditor: TypeScriptTextEditor) => {
                         onTypeScriptTextEditorOpened.onNext(tsTextEditor);
@@ -99,6 +116,16 @@ module TypeScriptAtomizerPlugin {
         var packageConfig = require("../package.json");
 
         return atom.packages.getLoadedPackage(packageConfig.name).path
+    }
+
+    /**
+     * Waits for the 'autocomplete-plus' package to become active and then obtains its module.
+     */
+    function loadAutoCompletePackageModule(): void {
+        atom.packages.activatePackage("autocomplete-plus")
+            .then((p: Package)=> {
+                    autoCompletePlusPackageModule = p.mainModule;
+                });
     }
 
     /**

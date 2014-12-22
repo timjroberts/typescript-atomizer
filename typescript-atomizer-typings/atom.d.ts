@@ -31,6 +31,8 @@ interface TextBuffer {
      * Gets the entire text of the buffer.
      */
     getText(): string;
+
+    scanInRange(regex: RegExp, range: Range, iterator: Function);
 }
 
 /**
@@ -121,6 +123,14 @@ interface TextEditor {
      * Returns the underlying text buffer.
      */
     getBuffer(): TextBuffer;
+
+    /**
+     * Returns a string representing the contents of the line at a given buffer row.
+     *
+     * @param {number} bufferRow - A number representing the zero-indexed buffer row.
+     * @returns {string} A string representing the contents of the line at the given buffer row.
+     */
+    lineTextForBufferRow(bufferRow: number): string;
 
     getCursorBufferPosition(): Point;
 
@@ -229,6 +239,12 @@ interface Package {
      * The path to the location where the package has been installed.
      */
     path: string;
+
+    mainModule: any;
+}
+
+interface Continuation<T> {
+    then(callback: (value: T) => void): void;
 }
 
 /**
@@ -241,6 +257,12 @@ interface PackageManager {
      * @param {string} name - The package name.
      */
     getLoadedPackage(name: string): Package;
+
+    isPackageActive(name: string): boolean;
+
+    getActivePackage(name: string): Package;
+
+    activatePackage(name: string): Continuation<Package>;
 }
 
 /**
