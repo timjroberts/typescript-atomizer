@@ -23,6 +23,14 @@ interface Grammar {
     name: string;
 }
 
+interface ScanMatch {
+    match: any;
+    matchText: string;
+    range: Range;
+    stop: () => void;
+    replace: (replaceText: string) => void;
+}
+
 /**
  * A mutable text container with undo/redo support and the ability to annotate logical regions in the text.
  */
@@ -32,29 +40,48 @@ interface TextBuffer {
      */
     getText(): string;
 
-    scanInRange(regex: RegExp, range: Range, iterator: Function);
+    /**
+     * Deletes the text in a given range.
+     *
+     * @param {Range} range - A range in which to delete. The range is clipped before deleting.
+     * @returns {Range} An empty range starting at the start of the deleted range.
+     */
+    delete(range: Range): Range;
+
+    scanInRange(regex: RegExp, range: Range, callback: (match: ScanMatch) => void);
+    scanInRange(regex: RegExp, range: number[][], callback: (match: ScanMatch) => void);
 }
 
 /**
  * Represents a point in a buffer in row/column coordinates.
  */
-declare class Point {
+interface Point {
     /**
      * Creates a new {Point} object.
      *
      * @param {number} row - The row number.
      * @param {number} columm - The column number.
      */
-    constructor(row: number, column: number);
+    //constructor(row: number, column: number);
 
     row: number;
     column: number;
+
+    isLessThan(point: Point): boolean;
+    isGreaterThan(point: Point): boolean;
+
+    //static fromObject(obj: any): Point;
 }
 
 /**
  * Represents a region in a buffer in row/column coordinates.
  */
 interface Range {
+    start: Point;
+    end: Point;
+
+    copy(): Range;
+
     /**
      * Determines if a given point is within the range.
      *
@@ -63,6 +90,8 @@ interface Range {
      * endpoints. Defaults to false.
      */
     containsPoint(point: Point, exclusive?: boolean): boolean;
+
+    intersectsWith(range: Range): boolean;
 }
 
 /**
@@ -83,14 +112,45 @@ interface Marker {
     getScreenRange(): Range;
 }
 
+interface Decoration {
+    destroy(): void;
+}
+
 interface Cursor {
     getScreenPosition(): Point;
+    getBufferPosition(): Point;
+
+    setBufferPosition(point: Point): void;
+    setBufferPosition(point: number[]): void;
+
+    getMarker(): Marker;
 
     onDidChangePosition(callback: (event: any) => void): Disposable;
 }
 
 interface ScopeDescriptor {
 
+}
+
+interface Checkpoint {
+
+}
+
+interface TextEditorView {
+    getModel(): TextEditor;
+}
+
+interface InsertTextEvent {
+    cancel: Function;
+    text: string;
+}
+
+interface Selection {
+    getBufferRange(): Range;
+
+    deleteSelectedText(): void;
+
+    clear(): void;
 }
 
 /**
@@ -101,6 +161,8 @@ interface ScopeDescriptor {
  */
 interface TextEditor {
     mini: boolean;
+
+    isDestroyed(): boolean;
 
     /**
      * Returns the grammar that the editor is using.
@@ -117,6 +179,7 @@ interface TextEditor {
      */
     getText(): string;
 
+    getCursors(): Array<Cursor>;
     getLastCursor(): Cursor;
 
     /**
@@ -142,7 +205,35 @@ interface TextEditor {
     markBufferRange(points: Point[], options: any): Marker;
     markScreenRange(points: Point[], options: any): Marker;
 
-    decorateMarker(marker: Marker, options: any);
+    decorateMarker(marker: Marker, options: any): Decoration;
+
+    createCheckpoint(): Checkpoint;
+    revertToCheckpoint(checkpoint: Checkpoint): void;
+
+    insertText(text: string, options?: any);
+
+    getSelectedText(): string;
+
+    getLastSelection(): Selection;
+    getSelections(): Array<Selection>;
+
+    setSelectedBufferRanges(ranges: Array<Range>, options?: any): void;
+    setSelectedBufferRanges(ranges: any[][], options?: any): void;
+
+    /**
+     * Batch multiple operations as a single undo/redo step.
+     *
+     * @param {number} groupingInterval - The number of milliseconds for which this transaction should be
+     * considered 'groupable' after it begins.
+     * @param {Function} fn - A function to call inside the transaction.
+     */
+    transact(groupingInterval: number, fn: Function);
+    /**
+     * Batch multiple operations as a single undo/redo step.
+     *
+     * @param {Function} fn - A function to call inside the transaction.
+     */
+    transact(fn: Function);
 
     /**
      * Invoke the given callback when the editor is destroyed.
@@ -157,6 +248,8 @@ interface TextEditor {
      * @returns {Disposable} A disposable on which 'dispose' can be called to unsubscribe.
      */
     onDidStopChanging(callback: () => void): Disposable;
+
+    onWillInsertText(callback: (insertEvent: InsertTextEvent) => void): Disposable;
 }
 
 /**
@@ -283,6 +376,12 @@ interface Config {
     set(scopeDescriptor?: ScopeDescriptor, keyPath?: string, value?: any);
 }
 
+interface CommandRegistry {
+    add(target: string, commandName: string, callback: (event: Event) => void): Disposable;
+
+    dispatch(target: EventTarget, commandName: string): boolean;
+}
+
 /**
  * Atom global for dealing with packages, themes, menus, and the window.
  *
@@ -310,6 +409,11 @@ interface AtomGlobal {
     views: ViewRegistry;
 
     config: Config;
+
+    /**
+     * Gets the global command registry.
+     */
+    commands: CommandRegistry;
 }
 
 declare var atom: AtomGlobal;

@@ -7,57 +7,20 @@ import Rx = require("rx");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
-
-/**
- * A private class that represents the status bar state for an active TypeScript text editor.
- */
-class TypeScriptTextEditorStatusBarState {
-    private _inError: boolean;
-    private _defaultMessage: string;
-    private _currentMessage: string;
-
-    /**
-     * Updates the current state from the supplied TypeScript diagnostics.
-     *
-     * @param {Array<ts.Diagnostic>} diagnostics - The array of diagnostics from which the current state should be updated.
-     */
-    public updateFromDiagnostics(diagnostics: Array<ts.Diagnostic>): void {
-        this._inError = diagnostics.length > 0;
-        this._defaultMessage = this._inError ? diagnostics.length + " error(s)" : "";
-        this._currentMessage = null;
-    }
-
-    /**
-     * Gets a flag indicating whether the TypeScript text editor has diagnostic errors.
-     */
-    public get inError(): boolean { return this._inError; }
-
-    /**
-     * Gets a message to display (usually a TypeScript diagnostic error).
-     */
-    public get message(): string { return this._currentMessage !== null ? this._currentMessage : this._defaultMessage; }
-    /**
-     * Sets a message to display.
-     *
-     * @param {string} value - The message to be displayed. If null is specified, then the 'message' becomes
-     * the default message determined by the current diagnostics.
-     */
-    public set message(value: string) {
-        this._currentMessage = value;
-    }
-}
+import TypeScriptWorkspaceState = require("./TypeScriptWorkspaceState");
 
 /**
  * Orchestrates the state of the user interface in regards to the open TypeScript text editors and any global
  * level views.
  */
-class TypeScriptWorkspace {
-    private _textEditorStates: StringIndexDictionary<TypeScriptTextEditorStatusBarState>;
+class TypeScriptWorkspace implements Disposable {
+    private _atom: AtomGlobal;
+    private _textEditorStates: StringIndexDictionary<TypeScriptWorkspaceState>;
     private _workspace: Workspace;
     private _workspaceView: WorkspaceView;
-    private _viewRegistry: ViewRegistry
+    private _viewRegistry: ViewRegistry;
     private _statusBar: TypeScriptDiagnosticStatusBar;
-    private _activeTextEditor: TextEditor;
+    private _disposables: Array<Disposable>;
 
     /**
      * Initializes a new {TypeScriptWorkspace}.
@@ -68,16 +31,32 @@ class TypeScriptWorkspace {
      * text editors.
      */
     constructor(atom: AtomGlobal, onTypeScriptTextEditorOpened: Rx.Observable<TypeScriptTextEditor>, onTextEditorChanged: Rx.Observable<TextEditor>) {
+        this._atom = atom;
         this._textEditorStates = { };
         this._workspace = atom.workspace;
         this._workspaceView = atom.workspaceView;
         this._viewRegistry = atom.views;
         this._statusBar = null;
 
-        this._activeTextEditor = this._workspace.getActiveTextEditor();
-
         onTypeScriptTextEditorOpened.subscribe((tsTextEditor: TypeScriptTextEditor) => this.onTypeScriptTextEditorOpened.call(this, tsTextEditor));
         onTextEditorChanged.subscribe((textEditor: TextEditor) => this.onTextEditorChanged.call(this, textEditor));
+
+        this._disposables =
+            [
+                this._atom.commands.add("atom-text-editor[data-grammar='source typescript']",
+                                                               "typescript-atomizer-autocomplete:toggle",
+                                                               (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)),
+                this._atom.commands.add("atom-text-editor[mini]",
+                                                               "typescript-atomizer-autocomplete:toggle",
+                                                               (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent))
+            ];
+    }
+
+    /**
+     * Disposes of the current TypeScript workspace.
+     */
+    public dispose(): void {
+        this._disposables.forEach((disposable: Disposable) => { disposable.dispose(); });
     }
 
     /**
@@ -85,17 +64,16 @@ class TypeScriptWorkspace {
      *
      * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor that has been opened.
      */
-    private onTypeScriptTextEditorOpened(tsTextEditor: TypeScriptTextEditor): void {
-        tsTextEditor.onDiagnosticsChanged
-            .filter((te: TypeScriptTextEditor, idx: number, obs: Rx.Observable<TypeScriptTextEditor>): boolean => {
-                    return true; // TODO: Filter on the active text editor
-                })
+    private onTypeScriptTextEditorOpened(typescriptTextEditor: TypeScriptTextEditor): void {
+        this._textEditorStates[typescriptTextEditor.path] = new TypeScriptWorkspaceState(typescriptTextEditor);
+
+        typescriptTextEditor.onDiagnosticsChanged
             .subscribe((tsTextEditor) => this.onTypeScriptTextEditorDiagnosticsChanged.call(this, tsTextEditor));
 
-        tsTextEditor.onDiagnosticSelected
-            .subscribe((diagnostic) => this.onTypeScriptDiagnosticSelected.call(this, diagnostic));
+        typescriptTextEditor.onDiagnosticSelected
+            .subscribe((diagnostic) => this.onTypeScriptDiagnosticSelected.call(this, typescriptTextEditor, diagnostic));
 
-        tsTextEditor.onClosed
+        typescriptTextEditor.onClosed
             .subscribe((tsTextEditor: TypeScriptTextEditor) => this.onTypeScriptTextEditorClosed.call(this, tsTextEditor));
     }
 
@@ -112,21 +90,18 @@ class TypeScriptWorkspace {
             return;
         }
 
-        this._activeTextEditor = textEditor;
-
-        this.updateStatusBar();
+        this.updateStatusBar(this._textEditorStates[TypeScript.switchToForwardSlashes(textEditor.getPath())]);
     }
 
     /**
      * Called when the diagnostics change within a TypeScript text editor.
      *
-     * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor for which diagnostics have changed.
+     * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor for which diagnostics have changed.
      */
-    private onTypeScriptTextEditorDiagnosticsChanged(tsTextEditor: TypeScriptTextEditor): void {
-        var state: TypeScriptTextEditorStatusBarState = this.getOrCreateTypeScriptTextEditorStatusBarState(this._activeTextEditor.getPath());
+    private onTypeScriptTextEditorDiagnosticsChanged(typescriptTextEditor: TypeScriptTextEditor): void {
+        var state = this._textEditorStates[typescriptTextEditor.path];
 
-        state.updateFromDiagnostics(tsTextEditor.getLanguageDiagnostics());
-
+        state.updateFromDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
         this.updateStatusBar(state);
     }
 
@@ -135,21 +110,39 @@ class TypeScriptWorkspace {
      *
      * @param {ts.Diagnostic} diagnostic - The diagnostic that has been selected.
      */
-    private onTypeScriptDiagnosticSelected(diagnostic: ts.Diagnostic): void {
-        var state: TypeScriptTextEditorStatusBarState = this.getOrCreateTypeScriptTextEditorStatusBarState(this._activeTextEditor.getPath());
+    private onTypeScriptDiagnosticSelected(typescriptTextEditor: TypeScriptTextEditor, diagnostic: ts.Diagnostic): void {
+        var state = this._textEditorStates[typescriptTextEditor.path];
 
         state.message = diagnostic ? diagnostic.messageText : null;
-
         this.updateStatusBar(state);
     }
 
     /**
      * Called when a TypeScript text editor has been closed in the Atom workspace.
      *
-     * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor that has been closed.
+     * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor that has been closed.
      */
-    private onTypeScriptTextEditorClosed(tsTextEditor: TypeScriptTextEditor): void {
-        this._textEditorStates[tsTextEditor.path] = undefined;
+    private onTypeScriptTextEditorClosed(typescriptTextEditor: TypeScriptTextEditor): void {
+        this._textEditorStates[typescriptTextEditor.path] = undefined;
+    }
+
+    /**
+     * Called when the auto-complete 'toggle' command has been activated.
+     */
+    private onToggleAutoComplete(htmlEvent: Event) {
+        var textEditor: TextEditor = this._workspace.getActiveTextEditor();
+
+        if (textEditor.getGrammar().name !== "TypeScript") {
+            (<any>htmlEvent).abortKeyBinding();
+
+            return;
+        }
+
+        htmlEvent.stopPropagation();
+
+        var state: TypeScriptWorkspaceState = this._textEditorStates[TypeScript.switchToForwardSlashes(textEditor.getPath())];
+
+        state.toggleAutoComplete();
     }
 
     /**
@@ -158,8 +151,9 @@ class TypeScriptWorkspace {
      * @param {TypeScriptTextEditorStatusBarState} state - The state which will be used to update the status bar. If not
      * specified, then state is retrieved for the currently active text editor.
      */
-    private updateStatusBar(state?: TypeScriptTextEditorStatusBarState): void {
-        if (!state) state = this.getOrCreateTypeScriptTextEditorStatusBarState(this._activeTextEditor.getPath());
+    private updateStatusBar(state: TypeScriptWorkspaceState): void {
+        if (this._workspace.getActiveTextEditor() !== state.typescriptTextEditor.textEditor)
+            return; // The state being updated is not for the active TextEditor
 
         var statusBar: TypeScriptDiagnosticStatusBar = this.getStatusBar();
 
@@ -167,23 +161,6 @@ class TypeScriptWorkspace {
         statusBar.message = state.message;
 
         statusBar.show();
-    }
-
-    /**
-     * Creates or returns an existing status bar state object for a given path.
-     *
-     * @param {string} path - The full path for which a state object is required.
-     */
-    private getOrCreateTypeScriptTextEditorStatusBarState(path: string): TypeScriptTextEditorStatusBarState {
-        var state: TypeScriptTextEditorStatusBarState = this._textEditorStates[path];
-
-        if (!state) {
-            state = new TypeScriptTextEditorStatusBarState();
-
-            this._textEditorStates[path] = state;
-        }
-
-        return state;
     }
 
     /**

@@ -20,7 +20,7 @@
     "dependencies": {
         "rx": "*",
         "typescript-atomizer-typings": "*",
-        "atomizer-core": "*"
+        "atom-space-pen-views": "*"
     },
     "devDependencies": {
         "jasmine": "*",
