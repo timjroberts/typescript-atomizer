@@ -18,11 +18,9 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
     private _normalizedPath: string;
     private _languageService: ts.LanguageService;
     private _diagnostics: Array<ts.Diagnostic>;
-    private _diagnosticMarkers: Array<Marker>;
     private _onClosed: Rx.Subject<TypeScriptTextEditor>;
     private _onContentsChanged: Rx.Subject<TypeScriptTextEditor>;
-    private _onDiagnosticsChanged: Rx.Subject<TypeScriptTextEditor>;
-    private _onDiagnosticSelected: Rx.Subject<ts.Diagnostic>;
+    private _onCursorPositionChanged: Rx.Subject<Point>;
 
     /**
      * Initializes a new {TypeScriptTextEditor}.
@@ -37,38 +35,24 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
         this._textBuffer = this._textEditor.getBuffer();
         this._documentRegistry = documentRegistry;
         this._normalizedPath = TypeScript.switchToForwardSlashes(this._textEditor.getPath());
-        this._diagnosticMarkers = [];
-        this._diagnostics = [];
 
         this._onClosed = new Rx.Subject<TypeScriptTextEditor>();
         this._onContentsChanged = new Rx.Subject<TypeScriptTextEditor>();
-        this._onDiagnosticsChanged = new Rx.Subject<TypeScriptTextEditor>();
-        this._onDiagnosticSelected = new Rx.Subject<ts.Diagnostic>();
+        this._onCursorPositionChanged = new Rx.Subject<Point>();
 
         var onContentsChangedSubscription =
             TypeScriptTextEditor.createOnContentsChangedObservable(this._textEditor)
                 .subscribe(() => {
                         this._onContentsChanged.onNext(this);
-
-                        this.updateDiagnostics.call(this);
-
-                        this._onDiagnosticsChanged.onNext(this);
                     });
 
-        var onDiagnosticSelectionChangedSubscription =
+        var onCursorChangedSubscription =
             TypeScriptTextEditor.createOnCursorChangedPositionObservable(this._textEditor)
                 .select((_, idx: number, obs: Rx.Observable<void>) => {
-                        var cursorPoint: Point = this._textEditor.getLastCursor().getScreenPosition();
-
-                        var index: number =
-                            ArrayUtils.findIndex(this._diagnosticMarkers, (marker: Marker) => { return marker.getScreenRange().containsPoint(cursorPoint); });
-
-                        if (index >= 0) return this._diagnostics[index];
-
-                        return null;
+                        return this._textEditor.getLastCursor().getScreenPosition();
                     })
-                .subscribe((diagnostic: ts.Diagnostic) => {
-                        this._onDiagnosticSelected.onNext(diagnostic);
+                .subscribe((point: Point) => {
+                        this._onCursorPositionChanged.onNext(point);
                     });
 
         var onDestroySubscription =
@@ -76,15 +60,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                 .subscribe(() => {
                         this._onClosed.onNext(this);
 
-                        this._onDiagnosticsChanged.onCompleted();
                         this._onContentsChanged.onCompleted();
+                        this._onCursorPositionChanged.onCompleted();
                         this._onClosed.onCompleted();
 
                         onContentsChangedSubscription.dispose();
-                        onDiagnosticSelectionChangedSubscription.dispose();
+                        onCursorChangedSubscription.dispose();
                         onDestroySubscription.dispose();
 
-                        this.disposeCurrentDiagnosticMarkers();
                         this._languageService.dispose();
                     });
 
@@ -130,26 +113,20 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
     }
 
     /**
-     * Gets an observable that when subscribed to will indicate when the TypeScript diagnostics
-     * have changed.
+     * Gets an observable that when subscribed to will indicate when the cursor position
+     * has changed in the editor.
      */
-    public get onDiagnosticsChanged(): Rx.Observable<TypeScriptTextEditor> {
-        return this._onDiagnosticsChanged;
-    }
-
-    /**
-     * Gets an observable that when subscribed to will indicate when a TypeScript diagnostic
-     * has been selected in the editor.
-     */
-    public get onDiagnosticSelected(): Rx.Observable<ts.Diagnostic> {
-        return this._onDiagnosticSelected;
+    public get onCursorPositionChanged(): Rx.Observable<Point> {
+        return this._onCursorPositionChanged;
     }
 
     /**
      * Retrieves the current TypeScript diagnostic messages.
      */
     public getLanguageDiagnostics(): Array<ts.Diagnostic> {
-        return this._diagnostics;
+        var diagnostics = this._languageService.getSemanticDiagnostics(this._normalizedPath);
+
+        return diagnostics ? diagnostics : [ ];
     }
 
     /**
@@ -255,53 +232,6 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
         }
         catch (error)
         { }
-    }
-
-    /**
-     * Destroys the existing markers representing TypeScript diagnostic messages.
-     */
-    private disposeCurrentDiagnosticMarkers(): void {
-        this._diagnosticMarkers.forEach((diagnosticMarker: Marker) => {
-                diagnosticMarker.destroy();
-            });
-
-        this._diagnosticMarkers = [];
-    }
-
-    /**
-     * Requests diagnostics from the underlying TypeScript language services for the current TypeScript text
-     * editor and creates markers for any diagnostic message returned.
-     */
-    private updateDiagnostics(): void {
-        this.disposeCurrentDiagnosticMarkers();
-
-        this._diagnostics = this._languageService.getSemanticDiagnostics(this._normalizedPath);
-
-        if (!Array.isArray(this._diagnostics) || this._diagnostics.length === 0) return;
-
-        var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
-
-        this._diagnostics.forEach((diagnostic: ts.Diagnostic) => {
-                var linePos = ArrayUtils.findIndex(bufferLineStartPositions, (pos: number) => { return diagnostic.start < pos; });
-
-                if (linePos < 0) {
-                    linePos = bufferLineStartPositions.length;
-                }
-
-                linePos--;
-
-                var columnPos = diagnostic.start - bufferLineStartPositions[linePos];
-
-                var start: Point = this._textEditor.screenPositionForBufferPosition([linePos, columnPos]);
-                var end: Point   = this._textEditor.screenPositionForBufferPosition([linePos, columnPos + diagnostic.length]);
-
-                var diagnosticMarker: Marker = this._textEditor.markScreenRange([start, end], { invalidate: "never" });
-
-                this._diagnosticMarkers.push(diagnosticMarker);
-
-                this._textEditor.decorateMarker(diagnosticMarker, { type: "highlight", class: "typescript-error" });
-            });
-
     }
 
     /**

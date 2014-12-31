@@ -2,6 +2,10 @@
     "name": "typescript-atomizer",
     "version": "0.0.0",
     "description": "An Atom plugin that provides TypeScript language support and tooling.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/timjroberts/typescript-atomizer.git"
+    },
     "keywords": [
         "typescript",
         "ts",
@@ -9,7 +13,7 @@
     ],
     "author": {
         "name": "Tim Roberts",
-        "url": "http://www.timjroberts.com"
+        "url": "http://http://about.me/timjroberts"
     },
     "license": "MIT",
     "engines": {

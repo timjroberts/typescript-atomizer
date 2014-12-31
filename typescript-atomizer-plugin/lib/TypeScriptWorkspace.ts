@@ -67,11 +67,11 @@ class TypeScriptWorkspace implements Disposable {
     private onTypeScriptTextEditorOpened(typescriptTextEditor: TypeScriptTextEditor): void {
         this._textEditorStates[typescriptTextEditor.path] = new TypeScriptWorkspaceState(typescriptTextEditor);
 
-        typescriptTextEditor.onDiagnosticsChanged
-            .subscribe((tsTextEditor) => this.onTypeScriptTextEditorDiagnosticsChanged.call(this, tsTextEditor));
+        typescriptTextEditor.onContentsChanged
+            .subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanged.call(this, tsTextEditor));
 
-        typescriptTextEditor.onDiagnosticSelected
-            .subscribe((diagnostic) => this.onTypeScriptDiagnosticSelected.call(this, typescriptTextEditor, diagnostic));
+        typescriptTextEditor.onCursorPositionChanged
+            .subscribe((point) => this.onCursorPositionChanged.call(this, typescriptTextEditor, point));
 
         typescriptTextEditor.onClosed
             .subscribe((tsTextEditor: TypeScriptTextEditor) => this.onTypeScriptTextEditorClosed.call(this, tsTextEditor));
@@ -94,26 +94,29 @@ class TypeScriptWorkspace implements Disposable {
     }
 
     /**
-     * Called when the diagnostics change within a TypeScript text editor.
+     * Called when the contents of a TypeScript text editor changes.
      *
-     * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor for which diagnostics have changed.
+     * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor.
      */
-    private onTypeScriptTextEditorDiagnosticsChanged(typescriptTextEditor: TypeScriptTextEditor): void {
+    private onTypeScriptTextEditorContentsChanged(typescriptTextEditor: TypeScriptTextEditor): void {
         var state = this._textEditorStates[typescriptTextEditor.path];
 
-        state.updateFromDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
+        if (state.autoCompleteInProgress)
+            return;
+
+        state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
         this.updateStatusBar(state);
     }
 
     /**
-     * Called when a diagnostic has been selected within a TypeScript text editor.
+     * Called when the cursor position has changed within a TypeScript text editor.
      *
      * @param {ts.Diagnostic} diagnostic - The diagnostic that has been selected.
      */
-    private onTypeScriptDiagnosticSelected(typescriptTextEditor: TypeScriptTextEditor, diagnostic: ts.Diagnostic): void {
+    private onCursorPositionChanged(typescriptTextEditor: TypeScriptTextEditor, point: Point): void {
         var state = this._textEditorStates[typescriptTextEditor.path];
 
-        state.message = diagnostic ? diagnostic.messageText : null;
+        state.updateFromCursorPosition(point);
         this.updateStatusBar(state);
     }
 
@@ -123,6 +126,10 @@ class TypeScriptWorkspace implements Disposable {
      * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor that has been closed.
      */
     private onTypeScriptTextEditorClosed(typescriptTextEditor: TypeScriptTextEditor): void {
+        var state = this._textEditorStates[typescriptTextEditor.path];
+
+        state.dispose();
+
         this._textEditorStates[typescriptTextEditor.path] = undefined;
     }
 
