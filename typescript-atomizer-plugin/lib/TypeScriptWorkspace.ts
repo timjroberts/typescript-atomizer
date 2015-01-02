@@ -67,6 +67,8 @@ class TypeScriptWorkspace implements Disposable {
     private onTypeScriptTextEditorOpened(typescriptTextEditor: TypeScriptTextEditor): void {
         this._textEditorStates[typescriptTextEditor.path] = new TypeScriptWorkspaceState(typescriptTextEditor);
 
+        typescriptTextEditor.onContentsChaning
+            .subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanging.call(this, tsTextEditor));
         typescriptTextEditor.onContentsChanged
             .subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanged.call(this, tsTextEditor));
 
@@ -94,6 +96,17 @@ class TypeScriptWorkspace implements Disposable {
     }
 
     /**
+     * Called when the contents of a TypeScript text editor has began to change.
+     *
+     * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor.
+     */
+    public onTypeScriptTextEditorContentsChanging(typescriptTextEditor: TypeScriptTextEditor) {
+        var state = this._textEditorStates[typescriptTextEditor.path];
+
+        state.contentsChanging = true;
+    }
+
+    /**
      * Called when the contents of a TypeScript text editor changes.
      *
      * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor.
@@ -104,7 +117,9 @@ class TypeScriptWorkspace implements Disposable {
         if (state.autoCompleteInProgress)
             return;
 
+        state.contentsChanging = false;
         state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
+
         this.updateStatusBar(state);
     }
 
@@ -149,7 +164,7 @@ class TypeScriptWorkspace implements Disposable {
 
         var state: TypeScriptWorkspaceState = this._textEditorStates[TypeScript.switchToForwardSlashes(textEditor.getPath())];
 
-        state.toggleAutoComplete();
+        this.executeAfterContentChange(state, () => state.toggleAutoComplete());
     }
 
     /**
@@ -191,6 +206,27 @@ class TypeScriptWorkspace implements Disposable {
         }
 
         return this._statusBar;
+    }
+
+    /**
+     * Delays execution of a function until a state indicates that it is no longer processing content changes.
+     *
+     * @param {TypeScriptWorkspaceState} state - The state object to track the content changing process on.
+     * @param {Function} func - The function to execute when the 'contentsChanging' property of the supplied state
+     * objects becomes false.
+     */
+    private executeAfterContentChange(state: TypeScriptWorkspaceState, func: Function): void {
+        var intervalCount = 0;
+        var maxIntervals = 3;
+
+        var interval = setInterval(() => {
+                if (!state.contentsChanging || intervalCount++ > 3) {
+                    func();
+                    state.contentsChanging = false;
+
+                    clearInterval(interval);
+                }
+            }, 150);
     }
 }
 

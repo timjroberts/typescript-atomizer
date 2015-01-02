@@ -16,6 +16,7 @@ class TypeScriptWorkspaceState implements Disposable {
     private _currentMessage: string;
     private _diagnostics: Array<ts.Diagnostic>;
     private _diagnosticMarkers: Array<Marker>;
+    private _contentsChanging: boolean;
 
     /**
      * Initializes a new state object for a given TypeScript text editor.
@@ -28,6 +29,7 @@ class TypeScriptWorkspaceState implements Disposable {
 
         this._diagnostics = [ ];
         this._diagnosticMarkers = [ ];
+        this._contentsChanging = false;
     }
 
     /**
@@ -58,6 +60,19 @@ class TypeScriptWorkspaceState implements Disposable {
      * Gets a flag indicating whether the auto-complete view is active.
      */
     public get autoCompleteInProgress(): boolean { return this._autoCompleteView.isVisible(); }
+
+    /**
+     * Gets a flag indicating whether the TypeScript text editor is changing its buffer contents.
+     */
+    public get contentsChanging(): boolean {
+        return this._contentsChanging;
+    }
+    /**
+     * Sets a flag indicating whether the TypeScript text editor is changing its buffer contents.
+     */
+    public set contentsChanging(value: boolean) {
+        this._contentsChanging = value;
+    }
 
     /**
      * Disposes of the current TypeScript workspace state.
@@ -104,6 +119,14 @@ class TypeScriptWorkspaceState implements Disposable {
             });
     }
 
+    /**
+     * Updates the current state from the supplied cursor position.
+     *
+     * If the cursor has moved into the bounds of a marker that represents a diagnostic error, then the diagnostic text will
+     * be displayed in the status bar.
+     *
+     * @param {Point} cursorPosition - The row and column of the cursor position.
+     */
     public updateFromCursorPosition(cursorPosition: Point) {
         var index: number =
             ArrayUtils.findIndex(this._diagnosticMarkers, (marker: Marker) => { return marker.getScreenRange().containsPoint(cursorPosition); });

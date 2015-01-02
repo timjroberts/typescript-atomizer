@@ -242,6 +242,8 @@ interface TextEditor {
      */
     onDidDestroy(callback: () => void): Disposable;
 
+    onDidChange(callback: () => void): Disposable;
+
     /**
      * Invoke the given callback when the underlying buffer's contents change.
      *

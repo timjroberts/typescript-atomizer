@@ -23,10 +23,10 @@ elementPrototype.createdCallback =
         this.appendChild(this.statusBarElementDiv);
     }
 
-elementPrototype.attachedCallback =
-    function() {
-        console.log("typescript-diag-status-bar: attached");
-    }
+//elementPrototype.attachedCallback =
+//    function() {
+//
+//    }
 
 elementPrototype.setModel =
     function(statusBar: TypeScriptDiagnosticStatusBar) {

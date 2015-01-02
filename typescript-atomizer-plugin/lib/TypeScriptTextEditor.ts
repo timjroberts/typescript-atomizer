@@ -19,6 +19,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
     private _languageService: ts.LanguageService;
     private _diagnostics: Array<ts.Diagnostic>;
     private _onClosed: Rx.Subject<TypeScriptTextEditor>;
+    private _onContentsChanging: Rx.Subject<TypeScriptTextEditor>;
     private _onContentsChanged: Rx.Subject<TypeScriptTextEditor>;
     private _onCursorPositionChanged: Rx.Subject<Point>;
 
@@ -37,8 +38,15 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
         this._normalizedPath = TypeScript.switchToForwardSlashes(this._textEditor.getPath());
 
         this._onClosed = new Rx.Subject<TypeScriptTextEditor>();
+        this._onContentsChanging = new Rx.Subject<TypeScriptTextEditor>();
         this._onContentsChanged = new Rx.Subject<TypeScriptTextEditor>();
         this._onCursorPositionChanged = new Rx.Subject<Point>();
+
+        var onContentsChanging =
+            TypeScriptTextEditor.createOnContentsChangingObservable(this._textEditor)
+                .subscribe(() => {
+                        this._onContentsChanging.onNext(this);
+                    });
 
         var onContentsChangedSubscription =
             TypeScriptTextEditor.createOnContentsChangedObservable(this._textEditor)
@@ -60,10 +68,12 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
                 .subscribe(() => {
                         this._onClosed.onNext(this);
 
+                        this._onContentsChanging.onCompleted();
                         this._onContentsChanged.onCompleted();
                         this._onCursorPositionChanged.onCompleted();
                         this._onClosed.onCompleted();
 
+                        onContentsChanging.dispose();
                         onContentsChangedSubscription.dispose();
                         onCursorChangedSubscription.dispose();
                         onDestroySubscription.dispose();
@@ -102,6 +112,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      */
     public get onClosed(): Rx.Observable<TypeScriptTextEditor> {
         return this._onClosed;
+    }
+
+    /**
+     * Gets an observable that when subscribed to will indicate when the TypeScript text
+     * editor contents have began changing.
+     */
+    public get onContentsChaning(): Rx.Observable<TypeScriptTextEditor> {
+        return this._onContentsChanging;
     }
 
     /**
@@ -232,6 +250,29 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
         }
         catch (error)
         { }
+    }
+
+    /**
+     * Returns an observable stream of text editor change by subscribing to the underlying
+     * Atom Text Editor.
+     *
+     * @param {TextEditor} textEditor - The Atom TextEditor.
+     * @returns {Rx.Observable<void>} Returns an observable stream of text editor changes.
+     */
+    private static createOnContentsChangingObservable(textEditor: TextEditor): Rx.Observable<void> {
+        var addHandler =
+            (h) => {
+                return textEditor.onDidChange(h);
+            };
+
+        var removeHandler =
+            (...args) => {
+                var disposable = <Disposable>args[1];
+
+                disposable.dispose();
+            };
+
+        return Rx.Observable.fromEventPattern<void>(addHandler, removeHandler);
     }
 
     /**
