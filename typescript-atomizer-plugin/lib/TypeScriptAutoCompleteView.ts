@@ -77,6 +77,9 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
         if (kind === "")
             return "unknown";
 
+        if (kind === "type parameter")
+            return "typeparam";
+
         if (kind === "var" || kind === "local var")
             return "parameter";
 
