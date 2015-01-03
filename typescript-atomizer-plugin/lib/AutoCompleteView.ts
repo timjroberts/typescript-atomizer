@@ -53,7 +53,7 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
         var itemElemenet: HTMLElement = document.createElement("li");
         var spanElement: HTMLElement = document.createElement("span");
 
-        spanElement.appendChild(this.getViewForItem(item));
+        spanElement.appendChild(this.getViewForItem(item.item));
 
         itemElemenet.appendChild(spanElement);
 
@@ -124,13 +124,13 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * Derived classes should override this function to override the default view.
      *
-     * @param item - An auto-complete item containing the data that can be used to render the item's view.
+     * @param item - An item containing the data that can be used to render the item's view.
      * @returns A HTMLElement representing the view of the auto-complete item.
      */
-    protected getViewForItem(item: AutoCompleteItem<TItem>): HTMLElement {
+    protected getViewForItem(item: TItem): HTMLElement {
         var spanElement: HTMLElement = document.createElement("span");
 
-        spanElement.textContent = item.word;
+        spanElement.textContent = this._getDisplayTextFunc(item);
 
         return spanElement;
     }

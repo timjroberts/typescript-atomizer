@@ -37,6 +37,71 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
 
         return completions;
     }
+    /**
+     * Returns the HTML view for a given auto-complete item.
+     *
+     * Derived classes should override this function to override the default view.
+     *
+     * @param item - An item containing the data that can be used to render the item's view.
+     * @returns A HTMLElement representing the view of the auto-complete item.
+     */
+    protected getViewForItem(item: ts.CompletionEntry): HTMLElement {
+        var spanElement: HTMLElement = document.createElement("span");
+
+        spanElement.classList.add("autocomplete-item");
+
+        var kindSpanElement = document.createElement("span");
+        var nameSpanElement = document.createElement("span");
+
+        kindSpanElement.classList.add("inline-block");
+        kindSpanElement.classList.add("kind");
+        kindSpanElement.classList.add(TypeScriptAutoCompleteView.getClassForKind(item));
+
+        nameSpanElement.classList.add("name");
+        nameSpanElement.textContent = item.name;
+
+        spanElement.appendChild(kindSpanElement);
+        spanElement.appendChild(nameSpanElement);
+
+        return spanElement;
+    }
+
+    /**
+     * Returns a class name to be applied for an auto-complete item to indicate its type.
+     *
+     * @param item - The item for which a class name should be determined.
+     */
+    private static getClassForKind(item: ts.CompletionEntry): string {
+        var kind: string = item.kind;
+
+        if (kind === "")
+            return "unknown";
+
+        if (kind === "var" || kind === "local var")
+            return "parameter";
+
+        if (kind === "method")
+            return TypeScriptAutoCompleteView.appendClassNameForKindModifier("function", item.kindModifiers);
+
+        if (kind === "property" || kind === "getter" || kind === "setter")
+            return TypeScriptAutoCompleteView.appendClassNameForKindModifier("property", item.kindModifiers);
+
+        return kind;
+    }
+
+    /**
+     * Appends the public/private modifier to a given class based on the modifier value that is also provided.
+     *
+     * @param currentClassName - The current class name that should be modified.
+     * @param modifier - The modifier to use in determining if a the current class name should be modified to indicate
+     * public or private access.
+     */
+    private static appendClassNameForKindModifier(currentClassName: string, modifier: string): string {
+        if (modifier === "" || modifier === "public")
+            return currentClassName;
+
+        return currentClassName + "-" + modifier;
+    }
 
     /**
      * A function that returns the text to be displayed in the auto-complete view for a given

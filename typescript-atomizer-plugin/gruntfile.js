@@ -40,6 +40,7 @@ module.exports = function(grunt)
                         "grammars/*",
                         "keymaps/*",
                         "stylesheets/*",
+                        "images/**",
                         "lib/**/*.js",
                         "lib/TypeScript/**",
                         "lib/Bootstrap/**",
