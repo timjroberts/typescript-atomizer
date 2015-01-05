@@ -1,12 +1,13 @@
 /// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
 
-import AutoCompleView = require("./AutoCompleteView");
+import AutoCompleView = require("./core/views/AutoCompleteView");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 
 /**
  * Represents an 'auto-complete' view for a TypeScript text editor.
  */
-class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
+class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry>
+{
     private _typescriptTextEditor: TypeScriptTextEditor;
 
     /**
@@ -14,7 +15,8 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
      *
      * @param typescriptTextEditor - The TypeScript text editor that the auto-complete view will be associated with.
      */
-    constructor(typescriptTextEditor: TypeScriptTextEditor) {
+    constructor(typescriptTextEditor: TypeScriptTextEditor)
+    {
         super(typescriptTextEditor.textEditor, TypeScriptAutoCompleteView.getDisplayTextForCompletionEntry);
 
         this._typescriptTextEditor = typescriptTextEditor;
@@ -27,7 +29,8 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
      *
      * @returns An array of TypeScript completion entries.
      */
-    protected getCompletionItems(): Array<ts.CompletionEntry> {
+    protected getCompletionItems(): Array<ts.CompletionEntry>
+    {
         var completionInfo: ts.CompletionInfo = this._typescriptTextEditor.getEditorCodeCompletionsForCursor();
 
         var completions: Array<ts.CompletionEntry> =
@@ -45,7 +48,8 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
      * @param item - An item containing the data that can be used to render the item's view.
      * @returns A HTMLElement representing the view of the auto-complete item.
      */
-    protected getViewForItem(item: ts.CompletionEntry): HTMLElement {
+    protected getViewForItem(item: ts.CompletionEntry): HTMLElement
+    {
         var spanElement: HTMLElement = document.createElement("span");
 
         spanElement.classList.add("autocomplete-item");
@@ -71,7 +75,8 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
      *
      * @param item - The item for which a class name should be determined.
      */
-    private static getClassForKind(item: ts.CompletionEntry): string {
+    private static getClassForKind(item: ts.CompletionEntry): string
+    {
         var kind: string = item.kind;
 
         if (kind === "")
@@ -99,7 +104,8 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
      * @param modifier - The modifier to use in determining if a the current class name should be modified to indicate
      * public or private access.
      */
-    private static appendClassNameForKindModifier(currentClassName: string, modifier: string): string {
+    private static appendClassNameForKindModifier(currentClassName: string, modifier: string): string
+    {
         if (modifier === "" || modifier === "public")
             return currentClassName;
 
@@ -113,7 +119,8 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry> {
      * @param item - The TypeScript completion entry for which the display text is required.
      * @returns The name of the supplied TypeScript completion entry.
      */
-    private static getDisplayTextForCompletionEntry(item: ts.CompletionEntry): string {
+    private static getDisplayTextForCompletionEntry(item: ts.CompletionEntry): string
+    {
         return item.name;
     }
 }

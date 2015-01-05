@@ -1,11 +1,12 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/atom-space-pen-views.d.ts" />
+/// <reference path="../../../node_modules/typescript-atomizer-typings/atom-space-pen-views.d.ts" />
 
-import SpacePenViews = require("atom-space-pen-views");
+import AtomSpacePenViews = require("atom-space-pen-views");
 
 /**
  * Represents an 'auto-complete' view for a text editor.
  */
-class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteItem<TItem>> {
+class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompleteItem<TItem>>
+{
     private static WordRegExp: RegExp = /\w+/g;
 
     private _textEditor: TextEditor;
@@ -20,7 +21,8 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      * @param textEditor - The text editor that the auto-complete view will be associated with.
      * @param getDisplayTextFunc - A function that returns the text to be displayed for a given item.
      */
-    constructor(textEditor: TextEditor, getDisplayTextFunc: (item: TItem) => string) {
+    constructor(textEditor: TextEditor, getDisplayTextFunc: (item: TItem) => string)
+    {
         super();
         this._textEditor = textEditor;
         this._getDisplayTextFunc = getDisplayTextFunc;
@@ -35,7 +37,8 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * @returns true if the auto-complete view is now visible; otherwise false.
      */
-    public toggle(): boolean {
+    public toggle(): boolean
+    {
         this.isVisible()
             ? this.cancel()
             : this.attach();
@@ -49,7 +52,8 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      * @param item - An auto-complete item containing the data that can be used to render the item's view.
      * @returns A HTMLElement representing the view of the auto-complete item.
      */
-    public viewForItem(item: AutoCompleteItem<TItem>): HTMLElement {
+    public viewForItem(item: AutoCompleteItem<TItem>): HTMLElement
+    {
         var itemElemenet: HTMLElement = document.createElement("li");
         var spanElement: HTMLElement = document.createElement("span");
 
@@ -65,8 +69,11 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * @param item - The auto-complete item containing the data that has been selected.
      */
-    public confirmed(item: AutoCompleteItem<TItem>): void {
-        this._textEditor.getSelections().forEach((selection: Selection) => {
+    public confirmed(item: AutoCompleteItem<TItem>): void
+    {
+        this._textEditor.getSelections()
+            .forEach((selection: Selection) =>
+            {
                 selection.clear();
             });
 
@@ -77,7 +84,9 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
 
         this.replaceSelectedTextWithMatch(item);
 
-        this._textEditor.getCursors().forEach((cursor: Cursor) => {
+        this._textEditor.getCursors()
+            .forEach((cursor: Cursor) =>
+            {
                 var cusorPosition: Point = cursor.getBufferPosition();
 
                 cursor.setBufferPosition([cusorPosition.row, cusorPosition.column + item.suffix.length]);
@@ -89,7 +98,8 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * @param item - The auto-complete item containing the data that is currently selected.
      */
-    public selectItemView(item: any) {
+    public selectItemView(item: any)
+    {
         super.selectItemView(item);
 
         this.replaceSelectedTextWithMatch(this.getSelectedItem())
@@ -98,16 +108,16 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
     /**
      * Called just before the view is attached to the text editor.
      */
-    public attach(): void {
+    public attach(): void
+    {
         this._checkpoint = this._textEditor.createCheckpoint();
-        this._originalSelectionBufferRanges =
-            this._textEditor.getSelections()
-                .map((s: Selection) => s.getBufferRange());
+        this._originalSelectionBufferRanges = this._textEditor.getSelections().map((s: Selection) => s.getBufferRange());
 
         var fixes: Fixes = AutoCompleteView.getFixesForSelection(this._textEditor, this._textEditor.getLastSelection());
         var completions: Array<TItem> = this.getCompletionItems();
 
-        if (fixes.prefix.length + fixes.suffix.length > 0) {
+        if (fixes.prefix.length + fixes.suffix.length > 0)
+        {
             var regExp: RegExp = new RegExp("^" + fixes.prefix + ".*" + fixes.suffix + "$");
 
             completions = completions.filter((e: TItem) => regExp.test(this._getDisplayTextFunc(e)));
@@ -115,8 +125,7 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
 
         this.setItems(completions.map((e: TItem) => new AutoCompleteItem<TItem>(e, this._getDisplayTextFunc, fixes)));
 
-        this._overlayDecoration =
-            this._textEditor.decorateMarker(this._textEditor.getLastCursor().getMarker(), { type: "overlay", position: "tail", item: this });
+        this._overlayDecoration = this._textEditor.decorateMarker(this._textEditor.getLastCursor().getMarker(), { type: "overlay", position: "tail", item: this });
     }
 
     /**
@@ -127,7 +136,8 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      * @param item - An item containing the data that can be used to render the item's view.
      * @returns A HTMLElement representing the view of the auto-complete item.
      */
-    protected getViewForItem(item: TItem): HTMLElement {
+    protected getViewForItem(item: TItem): HTMLElement
+    {
         var spanElement: HTMLElement = document.createElement("span");
 
         spanElement.textContent = this._getDisplayTextFunc(item);
@@ -142,7 +152,8 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * @returns An array of items to be displayed in the auto-complete view.
      */
-    protected getCompletionItems(): Array<TItem> {
+    protected getCompletionItems(): Array<TItem>
+    {
         return [ ];
     }
 
@@ -152,20 +163,23 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * @returns A string with the value 'word'.
      */
-    private getFilterKey(): string {
+    private getFilterKey(): string
+    {
         return "word";
     }
 
     /**
      * Called just after the view has been attached to the text editor.
      */
-    private attached(): void {
+    private attached(): void
+    {
         var spans = (<any>this.list).find("span");
         var widestSpan: number = parseInt((<any>this).css("min-width"));
 
-        spans.each((idx: number, span: any) => {
-                widestSpan = Math.max(widestSpan, span.offsetWidth);
-            });
+        spans.each((idx: number, span: any) =>
+        {
+            widestSpan = Math.max(widestSpan, span.offsetWidth);
+        });
 
         (<any>this.list).width(widestSpan + 20);
         this.width((<any>this.list).outerWidth());
@@ -178,11 +192,13 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      * Called when the view is being detached and removed from the text editor without any auto-complete item
      * being selected.
      */
-    private cancelled(): void {
+    private cancelled(): void
+    {
         if (this._overlayDecoration)
             this._overlayDecoration.destroy();
 
-        if (!this._textEditor.isDestroyed()) {
+        if (!this._textEditor.isDestroyed())
+        {
             this._textEditor.revertToCheckpoint(this._checkpoint);
             this._textEditor.setSelectedBufferRanges(this._originalSelectionBufferRanges);
 
@@ -195,33 +211,37 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      *
      * @param item - The auto-complete item containing the data that has been selected.
      */
-    private replaceSelectedTextWithMatch(item: AutoCompleteItem<TItem>): void {
+    private replaceSelectedTextWithMatch(item: AutoCompleteItem<TItem>): void
+    {
         var newSelectedBufferRanges = [ ];
 
-        this._textEditor.transact(() => {
-                this._textEditor.getSelections().forEach((selection: Selection, idx: number) => {
-                        var buffer = this._textEditor.getBuffer();
-                        var selectionRange: Range = selection.getBufferRange();
-                        var startPosition: Point = selectionRange.start;
+        this._textEditor.transact(() =>
+        {
+            this._textEditor.getSelections()
+                .forEach((selection: Selection, idx: number) =>
+                {
+                    var buffer = this._textEditor.getBuffer();
+                    var selectionRange: Range = selection.getBufferRange();
+                    var startPosition: Point = selectionRange.start;
 
-                        selection.deleteSelectedText();
+                    selection.deleteSelectedText();
 
-                        var cursorPosition: Point = this._textEditor.getCursors()[idx].getBufferPosition();
-                        var prefixRange = selectionRange.copy();
-                        var suffixRange = selectionRange.copy();
+                    var cursorPosition: Point = this._textEditor.getCursors()[idx].getBufferPosition();
+                    var prefixRange = selectionRange.copy();
+                    var suffixRange = selectionRange.copy();
 
-                        prefixRange.start.column = cursorPosition.column - item.prefix.length;
-                        prefixRange.end.column = cursorPosition.column;
+                    prefixRange.start.column = cursorPosition.column - item.prefix.length;
+                    prefixRange.end.column = cursorPosition.column;
 
-                        suffixRange.start.column = cursorPosition.column;
-                        suffixRange.end.column = cursorPosition.column + item.suffix.length;
+                    suffixRange.start.column = cursorPosition.column;
+                    suffixRange.end.column = cursorPosition.column + item.suffix.length;
 
-                        buffer.delete(suffixRange);
-                        buffer.delete(prefixRange);
+                    buffer.delete(suffixRange);
+                    buffer.delete(prefixRange);
 
-                        newSelectedBufferRanges.push([startPosition, [startPosition.row, startPosition.column + item.infixLength]]);
-                    });
-            });
+                    newSelectedBufferRanges.push([startPosition, [startPosition.row, startPosition.column + item.infixLength]]);
+                });
+        });
 
         this._textEditor.insertText(item.word);
         this._textEditor.setSelectedBufferRanges(newSelectedBufferRanges);
@@ -234,17 +254,21 @@ class AutoCompleteView<TItem> extends SpacePenViews.SelectListView<AutoCompleteI
      * @param selection - The selection from which a prefix and suffix can be computed.
      * @returns An object containing the prefix and suffix.
      */
-    private static getFixesForSelection(textEditor: TextEditor, selection: Selection): Fixes {
+    private static getFixesForSelection(textEditor: TextEditor, selection: Selection): Fixes
+    {
         var selectionRange: Range = selection.getBufferRange();
         var lineRange = [[selectionRange.start.row, 0], [selectionRange.end.row, textEditor.lineTextForBufferRow(selectionRange.end.row).length]]
         var prefix: string = "";
         var suffix: string = "";
 
-        textEditor.getBuffer().scanInRange(AutoCompleteView.WordRegExp, lineRange, (match: ScanMatch) => {
+        textEditor.getBuffer()
+            .scanInRange(AutoCompleteView.WordRegExp, lineRange, (match: ScanMatch) =>
+            {
                 if (match.range.start.isGreaterThan(selectionRange.end))
                     match.stop();
 
-                if (match.range.intersectsWith(selectionRange)) {
+                if (match.range.intersectsWith(selectionRange))
+                {
                     var prefixOffset: number = selectionRange.start.column - match.range.start.column;
                     var suffixOffset: number = match.range.end.column - selectionRange.end.column;
 
@@ -293,7 +317,8 @@ class AutoCompleteItem<T> implements Fixes {
      * @param getDisplayTextFunc - A function that returns the text to be displayed for the item.
      * @param fixes - The captured prefix and suffix.
      */
-    constructor(item: T, getDisplayTextFunc: (item: T) => string, fixes: Fixes) {
+    constructor(item: T, getDisplayTextFunc: (item: T) => string, fixes: Fixes)
+    {
         this._item = item;
         this._fixes = fixes;
         this._getDisplayTextFunc = getDisplayTextFunc;

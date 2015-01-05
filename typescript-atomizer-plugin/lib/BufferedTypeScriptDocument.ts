@@ -5,7 +5,8 @@ import TypeScriptDocument = require("./TypeScriptDocument");
 /**
  * Represents a TypeScript document that is open in the Atom workspace.
  */
-class BufferedTypeScriptDocument extends TypeScriptDocument {
+class BufferedTypeScriptDocument extends TypeScriptDocument
+{
     private _textBuffer: TextBuffer;
     private _documentVersion: number;
     private _bufferReferenceCount: number;
@@ -24,12 +25,16 @@ class BufferedTypeScriptDocument extends TypeScriptDocument {
      * @param {TextBuffer} textBuffer - The text buffer that representing the underlying TypeScript document.
      */
     constructor(documentPath: string, textBuffer: TextBuffer)
-    constructor(p1: any, textBuffer: TextBuffer) {
-        if (p1 instanceof TypeScriptDocument) {
+    constructor(p1: any, textBuffer: TextBuffer)
+    {
+        if (p1 instanceof TypeScriptDocument)
+        {
             var typescriptDocumentToCopy = <TypeScriptDocument>p1;
 
             super(typescriptDocumentToCopy);
-        } else {
+        }
+        else
+        {
             var documentPath = <string>p1;
 
             super(documentPath);
@@ -48,7 +53,8 @@ class BufferedTypeScriptDocument extends TypeScriptDocument {
     /**
      * Increments and returns the buffer reference count.
      */
-    public addBufferReference(): number {
+    public addBufferReference(): number
+    {
         this._bufferReferenceCount++;
 
         return this._bufferReferenceCount;
@@ -57,7 +63,8 @@ class BufferedTypeScriptDocument extends TypeScriptDocument {
     /**
      * Decrements and returns the buffer reference count.
      */
-    public releaseBuffer(): number {
+    public releaseBuffer(): number
+    {
         this._bufferReferenceCount--;
 
         return this._bufferReferenceCount;
@@ -66,7 +73,8 @@ class BufferedTypeScriptDocument extends TypeScriptDocument {
     /**
      * Increments and returns the document version.
      */
-    public incrementVersion(): number {
+    public incrementVersion(): number
+    {
         return this._documentVersion++;
     }
 
@@ -76,7 +84,8 @@ class BufferedTypeScriptDocument extends TypeScriptDocument {
      *
      * @returns {number} The document version.
      */
-    protected getCurrentDocumentVersion(): string {
+    protected getCurrentDocumentVersion(): string
+    {
         return this._documentVersion.toString();
     }
 
@@ -85,7 +94,8 @@ class BufferedTypeScriptDocument extends TypeScriptDocument {
      *
      * @returns {string} The contents of the underlying buffer.
      */
-    protected getDocumentText(): string {
+    protected getDocumentText(): string
+    {
         return this._textBuffer.getText();
     }
 }

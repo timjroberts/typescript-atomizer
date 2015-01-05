@@ -3,16 +3,17 @@
 /**
  * Provides utilities for accessing TypeScript services.
  */
-class TypeScriptServices {
+class TypeScriptServices
+{
     private static _initialized: boolean = false;
 
     /**
      * Loads and initializes the TypeScript services.
      */
-    public static initialize(): void {
-        if (TypeScriptServices._initialized) {
+    public static initialize(): void
+    {
+        if (TypeScriptServices._initialized)
             return;
-        }
 
         var coreTs: any = require("./TypeScript/typescriptServices");
 

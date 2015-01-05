@@ -3,7 +3,7 @@
 /// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.d.ts" />
 /// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.async.d.ts" />
 /// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
-/// <reference path="./StringIndexDictionary.d.ts" />
+/// <reference path="./core/StringIndexDictionary.d.ts" />
 
 import fs = require("fs");
 import Rx = require("rx");
@@ -14,7 +14,8 @@ import BufferedTypeScriptDocument = require("./BufferedTypeScriptDocument");
 /**
  * Provides a registry of TypeScript documents.
  */
-class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
+class TypeScriptDocumentRegistry implements ts.DocumentRegistry
+{
     private _typeScriptLibPath: string;
     private _documents: StringIndexDictionary<TypeScriptDocument>;
 
@@ -23,15 +24,14 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      *
      * @param {string} packageRootPath - The root path of where the plugin has been installed.
      */
-    constructor(packageRootPath: string) {
+    constructor(packageRootPath: string)
+    {
         this._typeScriptLibPath = ts.normalizePath(ts.combinePaths(packageRootPath, "lib/TypeScript/lib.d.ts"));
         this._documents = { };
 
         // Load the default library declaration file and increment it's reference count. It will never be removed
         // from the registry since every opened TypeScript document will make reference to it
-        var typescriptDocument: TypeScriptDocument = this.getOrCreateTypeScriptDocument(this._typeScriptLibPath);
-
-        typescriptDocument.addReference();
+        this.getOrCreateTypeScriptDocument(this._typeScriptLibPath).addReference();
     }
 
     /**
@@ -41,14 +41,14 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor from which the underlying
      * text buffer can be obtained.
      */
-    public openBufferedDocumentForEditor(tsTextEditor: TypeScriptTextEditor): void {
-        try {
-            var bufferedTypeScriptDocument: BufferedTypeScriptDocument =
-                this.getOrCreateBufferedTypeScriptDocument(tsTextEditor.path, tsTextEditor.textBuffer);
-
-            bufferedTypeScriptDocument.addBufferReference();
+    public openBufferedDocumentForEditor(tsTextEditor: TypeScriptTextEditor): void
+    {
+        try
+        {
+            this.getOrCreateBufferedTypeScriptDocument(tsTextEditor.path, tsTextEditor.textBuffer).addBufferReference();
         }
-        finally {
+        finally
+        {
             tsTextEditor.onContentsChanged.subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanged.call(this, tsTextEditor));
             tsTextEditor.onClosed.subscribe((tsTextEditor) => this.onTypeScriptTextEditorClosed.call(this, tsTextEditor));
         }
@@ -63,11 +63,13 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * @returns {Array<string>} An array of filenames representing all the TypeScript documents referenced by the
      * TypeScript document associated with the supplied TypeScript text editor.
      */
-    public getScriptFileNamesForEditor(tsTextEditor: TypeScriptTextEditor): Array<string> {
+    public getScriptFileNamesForEditor(tsTextEditor: TypeScriptTextEditor): Array<string>
+    {
         var compilerOptions = tsTextEditor.getCompilationSettings();
         var path = tsTextEditor.path;
 
-        if (compilerOptions.noResolve) return [ this._typeScriptLibPath, tsTextEditor.path ];
+        if (compilerOptions.noResolve)
+            return [ this._typeScriptLibPath, tsTextEditor.path ];
 
         var typescriptDocument: TypeScriptDocument = this._documents[path];
 
@@ -85,7 +87,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      *
      * @param {string} filename - The full path of the TypeScript document to return.
      */
-    public getDocument(filename: string): TypeScriptDocument {
+    public getDocument(filename: string): TypeScriptDocument
+    {
         var typescriptDocument: TypeScriptDocument = this._documents[filename];
 
         TypeScriptDocumentRegistry.checkDocument(filename, typescriptDocument);
@@ -96,7 +99,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
     /**
      * Returns the full path to the TypeScript default library declaration file (lib.d.ts).
      */
-    public getDefaultLibFilename(): string {
+    public getDefaultLibFilename(): string
+    {
         return this._typeScriptLibPath;
     }
 
@@ -106,7 +110,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * Once acquired, the TypeScript document will be held in the document registry until it has been released via
      * {@link TypeScriptDocumentRegistry#releaseDocument}.
      */
-    public acquireDocument(filename: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: TypeScript.IScriptSnapshot, version: string, isOpen: boolean): ts.SourceFile {
+    public acquireDocument(filename: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: TypeScript.IScriptSnapshot, version: string, isOpen: boolean): ts.SourceFile
+    {
         var typescriptDocument: TypeScriptDocument = this._documents[filename];
 
         TypeScriptDocumentRegistry.checkDocument(filename, typescriptDocument);
@@ -119,7 +124,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
     /**
      * Updates a TypeScript document in the registry from a given text change.
      */
-    public updateDocument(soruceFile: ts.SourceFile, filename: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: TypeScript.IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: TypeScript.TextChangeRange): ts.SourceFile {
+    public updateDocument(soruceFile: ts.SourceFile, filename: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: TypeScript.IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: TypeScript.TextChangeRange): ts.SourceFile
+    {
         var typescriptDocument: TypeScriptDocument = this._documents[filename];
 
         TypeScriptDocumentRegistry.checkDocument(filename, typescriptDocument);
@@ -132,14 +138,14 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      *
      * If the reference count of the TypeScript document is zero, then it is removed from the document registry.
      */
-    public releaseDocument(filename: string, compilationSettings: ts.CompilerOptions): void {
+    public releaseDocument(filename: string, compilationSettings: ts.CompilerOptions): void
+    {
         var typescriptDocument: TypeScriptDocument = this._documents[filename];
 
         TypeScriptDocumentRegistry.checkDocument(filename, typescriptDocument);
 
-        if (typescriptDocument.release() === 0) {
+        if (typescriptDocument.release() === 0)
             this._documents[filename] = undefined;
-        }
     }
 
     /**
@@ -147,7 +153,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      *
      * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor that has changed.
      */
-    private onTypeScriptTextEditorContentsChanged(tsTextEditor: TypeScriptTextEditor): void {
+    private onTypeScriptTextEditorContentsChanged(tsTextEditor: TypeScriptTextEditor): void
+    {
         var bufferedTypeScriptDocument: BufferedTypeScriptDocument = <BufferedTypeScriptDocument>this._documents[tsTextEditor.path];
 
         bufferedTypeScriptDocument.incrementVersion();
@@ -161,11 +168,13 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      *
      * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor that has been closed.
      */
-    private onTypeScriptTextEditorClosed(tsTextEditor: TypeScriptTextEditor): void {
+    private onTypeScriptTextEditorClosed(tsTextEditor: TypeScriptTextEditor): void
+    {
         var path = tsTextEditor.path;
         var bufferedTypeScriptDocument: BufferedTypeScriptDocument = <BufferedTypeScriptDocument>this._documents[path];
 
-        if (bufferedTypeScriptDocument.releaseBuffer() === 0) {
+        if (bufferedTypeScriptDocument.releaseBuffer() === 0)
+        {
             // No more references to this buffered document, so replace it with a base
             // TypeScriptDocument object
             this._documents[path] = new TypeScriptDocument(bufferedTypeScriptDocument);
@@ -177,10 +186,12 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      *
      * @param {string} path - The full path for which a TypeScript document is required.
      */
-    private getOrCreateTypeScriptDocument(path: string): TypeScriptDocument {
+    private getOrCreateTypeScriptDocument(path: string): TypeScriptDocument
+    {
         var typescriptDocument: TypeScriptDocument = this._documents[path];
 
-        if (!typescriptDocument) {
+        if (!typescriptDocument)
+        {
             typescriptDocument = new TypeScriptDocument(path);
 
             this._documents[path] = typescriptDocument;
@@ -196,14 +207,18 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * @param {TextBuffer} textBuffer - The text buffer that will be wrapped by the returned buffered TypeScript document.
      * @returns {BufferedTypeScriptDocument} A buffered TypeScript document that wraps an underlying {TextBuffer}.
      */
-    private getOrCreateBufferedTypeScriptDocument(path: string, textBuffer: TextBuffer): BufferedTypeScriptDocument {
+    private getOrCreateBufferedTypeScriptDocument(path: string, textBuffer: TextBuffer): BufferedTypeScriptDocument
+    {
         var typescriptDocument: TypeScriptDocument = this._documents[path];
 
-        if (!typescriptDocument) {
+        if (!typescriptDocument)
+        {
             typescriptDocument = new BufferedTypeScriptDocument(path, textBuffer);
 
             this._documents[path] = typescriptDocument;
-        } else if (!(typescriptDocument instanceof BufferedTypeScriptDocument)) {
+        }
+        else if (!(typescriptDocument instanceof BufferedTypeScriptDocument))
+        {
             typescriptDocument = new BufferedTypeScriptDocument(typescriptDocument, textBuffer);
 
             this._documents[path] = typescriptDocument;
@@ -221,7 +236,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * @param {Array<string>} sourceFilesVisited - Any array of files that have been visted (used to prevent circular references).
      * @returns {Array<string>} The full paths to all the TypeScript documents referenced by the given SourceFile.
      */
-    private walkSourceFileReferences(sourceFile: ts.SourceFile, basePath: string, scriptTarget: ts.ScriptTarget, sourceFilesVisited: Array<string>): Array<string> {
+    private walkSourceFileReferences(sourceFile: ts.SourceFile, basePath: string, scriptTarget: ts.ScriptTarget, sourceFilesVisited: Array<string>): Array<string>
+    {
         if (sourceFilesVisited.indexOf(sourceFile.filename) > -1) return [ ]; // We've done this source file already
 
         sourceFilesVisited.push(sourceFile.filename);
@@ -241,14 +257,20 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * @param {Array<string>} sourceFilesVisited - Any array of files that have been visted (used to prevent circular references).
      * @returns {Array<string>} The full paths to all the TypeScript documents referenced by the given SourceFile.
      */
-    private processReferencedFiles(sourceFile: ts.SourceFile, basePath: string, scriptTarget: ts.ScriptTarget, sourceFilesVisited: Array<string>): Array<string> {
+    private processReferencedFiles(sourceFile: ts.SourceFile, basePath: string, scriptTarget: ts.ScriptTarget, sourceFilesVisited: Array<string>): Array<string>
+    {
         var paths = [ ];
 
-        sourceFile.referencedFiles.forEach((fileRef: ts.FileReference) => {
+        sourceFile.referencedFiles
+            .forEach((fileRef: ts.FileReference) =>
+            {
                 var path = ts.isRootedDiskPath(fileRef.filename)
                     ? fileRef.filename
                     : ts.combinePaths(basePath, fileRef.filename);
                 var normalizedPath = ts.normalizePath(path);
+
+                if (!fs.existsSync(normalizedPath))
+                    return;
 
                 var typescriptDocument: TypeScriptDocument = this.getOrCreateTypeScriptDocument(normalizedPath);
                 var sourceFile = typescriptDocument.getSourceFile(scriptTarget);
@@ -268,41 +290,56 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * @param {Array<string>} sourceFilesVisited - Any array of files that have been visted (used to prevent circular references).
      * @returns {Array<string>} The full paths to all the TypeScript documents referenced by the given SourceFile.
      */
-    private processImportedModules(sourceFile: ts.SourceFile, basePath: string, scriptTarget: ts.ScriptTarget, sourceFilesVisited: Array<string>): Array<string> {
+    private processImportedModules(sourceFile: ts.SourceFile, basePath: string, scriptTarget: ts.ScriptTarget, sourceFilesVisited: Array<string>): Array<string>
+    {
         var paths = [ ];
 
-        sourceFile.statements.forEach((node: ts.Statement) => {
-                if (node.kind === ts.SyntaxKind.ImportDeclaration) {
+        var processModuleSourceFile = (filename: string) =>
+        {
+            var typescriptDocument: TypeScriptDocument = this.getOrCreateTypeScriptDocument(filename);
+            var sourceFile = typescriptDocument.getSourceFile(scriptTarget);
+
+            paths = paths.concat(this.walkSourceFileReferences(sourceFile, ts.getDirectoryPath(filename), scriptTarget, sourceFilesVisited));
+        };
+
+        sourceFile.statements
+            .forEach((node: ts.Statement) =>
+            {
+                if (node.kind === ts.SyntaxKind.ImportDeclaration)
+                {
                     var importDeclaration: ts.ImportDeclaration = <ts.ImportDeclaration>node;
+
+                    if (!importDeclaration || !importDeclaration.externalModuleName)
+                        return;
+
                     var nameLiteral = importDeclaration.externalModuleName;
                     var moduleName = nameLiteral.text;
 
-                    if (moduleName) {
-                        var processModuleSourceFile = (filename: string) => {
-                                var typescriptDocument: TypeScriptDocument = this.getOrCreateTypeScriptDocument(filename);
-                                var sourceFile = typescriptDocument.getSourceFile(scriptTarget);
-
-                                paths = paths.concat(this.walkSourceFileReferences(sourceFile, ts.getDirectoryPath(filename), scriptTarget, sourceFilesVisited));
-                            };
-
+                    if (moduleName)
+                    {
                         var searchPath = basePath;
 
-                        while (true) {
+                        while (true)
+                        {
                             var searchName = ts.normalizePath(ts.combinePaths(searchPath, moduleName));
                             var searchNameSource = searchName + ".ts";
                             var searchNameHeader = searchName + ".d.ts";
 
-                            if (fs.existsSync(searchNameSource)) {
+                            if (fs.existsSync(searchNameSource))
+                            {
                                 processModuleSourceFile(searchNameSource);
                                 break;
-                            } else if (fs.existsSync(searchNameHeader)) {
+                            }
+                            else if (fs.existsSync(searchNameHeader))
+                            {
                                 processModuleSourceFile(searchNameHeader);
                                 break;
                             }
 
                             var parentPath = ts.getDirectoryPath(searchPath);
 
-                            if (parentPath === searchPath) break;
+                            if (parentPath === searchPath)
+                                break;
 
                             searchPath = parentPath;
                         }
@@ -317,10 +354,10 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry {
      * Determines if a TypeScript document was yielded from a given path. If not, then it will
      * throw an error.
      */
-    private static checkDocument(path: string, doc: TypeScriptDocument): void {
-        if (!doc) {
+    private static checkDocument(path: string, doc: TypeScriptDocument): void
+    {
+        if (!doc)
             throw new Error("File '" + path + "' is unknown to the TypeScript document registry.");
-        }
     }
 }
 

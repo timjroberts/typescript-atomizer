@@ -1,5 +1,4 @@
-/// <reference path="./HTMLExtensions.d.ts" />
-/// <reference path="./StringIndexDictionary.d.ts" />
+/// <reference path="./core/StringIndexDictionary.d.ts" />
 /// <reference path="../node_modules/typescript-atomizer-typings/atom.d.ts" />
 /// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
 
@@ -13,7 +12,8 @@ import TypeScriptWorkspaceState = require("./TypeScriptWorkspaceState");
  * Orchestrates the state of the user interface in regards to the open TypeScript text editors and any global
  * level views.
  */
-class TypeScriptWorkspace implements Disposable {
+class TypeScriptWorkspace implements Disposable
+{
     private _atom: AtomGlobal;
     private _textEditorStates: StringIndexDictionary<TypeScriptWorkspaceState>;
     private _workspace: Workspace;
@@ -30,7 +30,8 @@ class TypeScriptWorkspace implements Disposable {
      * @param {Rx.Observable<TextEditor>} onTextEditorChanged - An observable stream of changes representing the current text editor.
      * text editors.
      */
-    constructor(atom: AtomGlobal, onTypeScriptTextEditorOpened: Rx.Observable<TypeScriptTextEditor>, onTextEditorChanged: Rx.Observable<TextEditor>) {
+    constructor(atom: AtomGlobal, onTypeScriptTextEditorOpened: Rx.Observable<TypeScriptTextEditor>, onTextEditorChanged: Rx.Observable<TextEditor>)
+    {
         this._atom = atom;
         this._textEditorStates = { };
         this._workspace = atom.workspace;
@@ -55,8 +56,13 @@ class TypeScriptWorkspace implements Disposable {
     /**
      * Disposes of the current TypeScript workspace.
      */
-    public dispose(): void {
-        this._disposables.forEach((disposable: Disposable) => { disposable.dispose(); });
+    public dispose(): void
+    {
+        this._disposables
+            .forEach((disposable: Disposable) =>
+            {
+                disposable.dispose();
+            });
     }
 
     /**
@@ -64,7 +70,8 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor that has been opened.
      */
-    private onTypeScriptTextEditorOpened(typescriptTextEditor: TypeScriptTextEditor): void {
+    private onTypeScriptTextEditorOpened(typescriptTextEditor: TypeScriptTextEditor): void
+    {
         this._textEditorStates[typescriptTextEditor.path] = new TypeScriptWorkspaceState(typescriptTextEditor);
 
         typescriptTextEditor.onContentsChaning
@@ -84,10 +91,12 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @param {TextEditor} textEditor - The text editor that has received focus in the Atom workspace.
      */
-    private onTextEditorChanged(textEditor: TextEditor): void {
+    private onTextEditorChanged(textEditor: TextEditor): void
+    {
         var statusBar: TypeScriptDiagnosticStatusBar = this.getStatusBar();
 
-        if (textEditor === undefined || textEditor.getGrammar().name !== "TypeScript") {
+        if (textEditor === undefined || textEditor.getGrammar().name !== "TypeScript")
+        {
             statusBar.hide();
             return;
         }
@@ -100,7 +109,8 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor.
      */
-    public onTypeScriptTextEditorContentsChanging(typescriptTextEditor: TypeScriptTextEditor) {
+    public onTypeScriptTextEditorContentsChanging(typescriptTextEditor: TypeScriptTextEditor)
+    {
         var state = this._textEditorStates[typescriptTextEditor.path];
 
         state.contentsChanging = true;
@@ -111,7 +121,8 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor.
      */
-    private onTypeScriptTextEditorContentsChanged(typescriptTextEditor: TypeScriptTextEditor): void {
+    private onTypeScriptTextEditorContentsChanged(typescriptTextEditor: TypeScriptTextEditor): void
+    {
         var state = this._textEditorStates[typescriptTextEditor.path];
 
         if (state.autoCompleteInProgress)
@@ -128,7 +139,8 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @param {ts.Diagnostic} diagnostic - The diagnostic that has been selected.
      */
-    private onCursorPositionChanged(typescriptTextEditor: TypeScriptTextEditor, point: Point): void {
+    private onCursorPositionChanged(typescriptTextEditor: TypeScriptTextEditor, point: Point): void
+    {
         var state = this._textEditorStates[typescriptTextEditor.path];
 
         state.updateFromCursorPosition(point);
@@ -140,7 +152,8 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor that has been closed.
      */
-    private onTypeScriptTextEditorClosed(typescriptTextEditor: TypeScriptTextEditor): void {
+    private onTypeScriptTextEditorClosed(typescriptTextEditor: TypeScriptTextEditor): void
+    {
         var state = this._textEditorStates[typescriptTextEditor.path];
 
         state.dispose();
@@ -151,10 +164,12 @@ class TypeScriptWorkspace implements Disposable {
     /**
      * Called when the auto-complete 'toggle' command has been activated.
      */
-    private onToggleAutoComplete(htmlEvent: Event) {
+    private onToggleAutoComplete(htmlEvent: Event)
+    {
         var textEditor: TextEditor = this._workspace.getActiveTextEditor();
 
-        if (textEditor.getGrammar().name !== "TypeScript") {
+        if (textEditor.getGrammar().name !== "TypeScript")
+        {
             (<any>htmlEvent).abortKeyBinding();
 
             return;
@@ -173,7 +188,8 @@ class TypeScriptWorkspace implements Disposable {
      * @param {TypeScriptTextEditorStatusBarState} state - The state which will be used to update the status bar. If not
      * specified, then state is retrieved for the currently active text editor.
      */
-    private updateStatusBar(state: TypeScriptWorkspaceState): void {
+    private updateStatusBar(state: TypeScriptWorkspaceState): void
+    {
         if (this._workspace.getActiveTextEditor() !== state.typescriptTextEditor.textEditor)
             return; // The state being updated is not for the active TextEditor
 
@@ -190,15 +206,18 @@ class TypeScriptWorkspace implements Disposable {
      *
      * @returns {TypeScriptDiagnosticStatusBar} The model representing the TypeScript diagnostic status bar.
      */
-    private getStatusBar(): TypeScriptDiagnosticStatusBar {
-        if (!this._statusBar) {
+    private getStatusBar(): TypeScriptDiagnosticStatusBar
+    {
+        if (!this._statusBar)
+        {
             this._statusBar = new TypeScriptDiagnosticStatusBar();
 
             var statusBarView = <ModelBasedHTMLElement<TypeScriptDiagnosticStatusBar>>this._viewRegistry.getView(this._statusBar);
 
             statusBarView.setModel(this._statusBar);
 
-            if (this._workspaceView.statusBar) {
+            if (this._workspaceView.statusBar)
+            {
                 statusBarView.classList.add("inline-block");
 
                 this._workspaceView.statusBar.prependLeft(statusBarView);
@@ -215,12 +234,15 @@ class TypeScriptWorkspace implements Disposable {
      * @param {Function} func - The function to execute when the 'contentsChanging' property of the supplied state
      * objects becomes false.
      */
-    private executeAfterContentChange(state: TypeScriptWorkspaceState, func: Function): void {
+    private executeAfterContentChange(state: TypeScriptWorkspaceState, func: Function): void
+    {
         var intervalCount = 0;
         var maxIntervals = 3;
 
-        var interval = setInterval(() => {
-                if (!state.contentsChanging || intervalCount++ > 3) {
+        var interval = setInterval(() =>
+            {
+                if (!state.contentsChanging || intervalCount++ > 3)
+                {
                     func();
                     state.contentsChanging = false;
 

@@ -1,6 +1,6 @@
 /// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
 
-import ArrayUtils = require("./ArrayUtils");
+import ArrayUtils = require("./core/ArrayUtils");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptAutoCompleteView = require("./TypeScriptAutoCompleteView");
 
@@ -8,7 +8,8 @@ import TypeScriptAutoCompleteView = require("./TypeScriptAutoCompleteView");
  * A private class that represents the global state for an active TypeScript text editor that is
  * open in the document registry and managed in the TypeScript workspace.
  */
-class TypeScriptWorkspaceState implements Disposable {
+class TypeScriptWorkspaceState implements Disposable
+{
     private _typescriptTextEditor: TypeScriptTextEditor;
     private _autoCompleteView: TypeScriptAutoCompleteView;
     private _inError: boolean;
@@ -23,7 +24,8 @@ class TypeScriptWorkspaceState implements Disposable {
      *
      * @param {TypeScriptTextEditor} typescriptTextEditor - The TypeScript text editor that the state will apply to.
      */
-    constructor(typescriptTextEditor: TypeScriptTextEditor) {
+    constructor(typescriptTextEditor: TypeScriptTextEditor)
+    {
         this._typescriptTextEditor = typescriptTextEditor;
         this._autoCompleteView = new TypeScriptAutoCompleteView(typescriptTextEditor);
 
@@ -52,7 +54,8 @@ class TypeScriptWorkspaceState implements Disposable {
      * @param {string} value - The message to be displayed. If null is specified, then the 'message' becomes
      * the default message determined by the current diagnostics.
      */
-    public set message(value: string) {
+    public set message(value: string)
+    {
         this._currentMessage = value;
     }
 
@@ -64,20 +67,23 @@ class TypeScriptWorkspaceState implements Disposable {
     /**
      * Gets a flag indicating whether the TypeScript text editor is changing its buffer contents.
      */
-    public get contentsChanging(): boolean {
+    public get contentsChanging(): boolean
+    {
         return this._contentsChanging;
     }
     /**
      * Sets a flag indicating whether the TypeScript text editor is changing its buffer contents.
      */
-    public set contentsChanging(value: boolean) {
+    public set contentsChanging(value: boolean)
+    {
         this._contentsChanging = value;
     }
 
     /**
      * Disposes of the current TypeScript workspace state.
      */
-    public dispose(): void {
+    public dispose(): void
+    {
         this.disposeCurrentDiagnosticMarkers();
     }
 
@@ -86,7 +92,8 @@ class TypeScriptWorkspaceState implements Disposable {
      *
      * @param {Array<ts.Diagnostic>} diagnostics - The array of diagnostics from which the current state should be updated.
      */
-    public updateFromTypeScriptDiagnostics(diagnostics: Array<ts.Diagnostic>): void {
+    public updateFromTypeScriptDiagnostics(diagnostics: Array<ts.Diagnostic>): void
+    {
         this._diagnostics = diagnostics;
         this._inError = diagnostics.length > 0;
         this._defaultMessage = this._inError ? diagnostics.length + " error(s)" : "";
@@ -97,12 +104,13 @@ class TypeScriptWorkspaceState implements Disposable {
         var textEditor = this._typescriptTextEditor.textEditor;
         var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(textEditor.getText());
 
-        this._diagnostics.forEach((diagnostic: ts.Diagnostic) => {
+        this._diagnostics
+            .forEach((diagnostic: ts.Diagnostic) =>
+            {
                 var linePos = ArrayUtils.findIndex(bufferLineStartPositions, (pos: number) => { return diagnostic.start < pos; });
 
-                if (linePos < 0) {
+                if (linePos < 0)
                     linePos = bufferLineStartPositions.length;
-                }
 
                 linePos--;
 
@@ -127,7 +135,8 @@ class TypeScriptWorkspaceState implements Disposable {
      *
      * @param {Point} cursorPosition - The row and column of the cursor position.
      */
-    public updateFromCursorPosition(cursorPosition: Point) {
+    public updateFromCursorPosition(cursorPosition: Point)
+    {
         var index: number =
             ArrayUtils.findIndex(this._diagnosticMarkers, (marker: Marker) => { return marker.getScreenRange().containsPoint(cursorPosition); });
 
@@ -140,15 +149,19 @@ class TypeScriptWorkspaceState implements Disposable {
     /**
      * Toggles the auto-complete view for the associated TypeScript text editor.
      */
-    public toggleAutoComplete(): void {
+    public toggleAutoComplete(): void
+    {
         this._autoCompleteView.toggle();
     }
 
     /**
      * Destroys the existing markers representing TypeScript diagnostic messages.
      */
-    private disposeCurrentDiagnosticMarkers(): void {
-        this._diagnosticMarkers.forEach((diagnosticMarker: Marker) => {
+    private disposeCurrentDiagnosticMarkers(): void
+    {
+        this._diagnosticMarkers
+            .forEach((diagnosticMarker: Marker) =>
+            {
                 diagnosticMarker.destroy();
             });
 

@@ -3,7 +3,6 @@
 /// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
 
 import Rx = require("rx");
-import ArrayUtils = require("./ArrayUtils");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
 import TypeScriptDocument = require("./TypeScriptDocument");
 
@@ -11,7 +10,8 @@ import TypeScriptDocument = require("./TypeScriptDocument");
  * Represents all the essential state for a text buffer opened upon a TypeScript
  * document. This includes markers that represent TypeScript diagnostic messages.
  */
-class TypeScriptTextEditor implements ts.LanguageServiceHost {
+class TypeScriptTextEditor implements ts.LanguageServiceHost
+{
     private _textEditor: TextEditor;
     private _textBuffer: TextBuffer;
     private _documentRegistry: TypeScriptDocumentRegistry;
@@ -31,7 +31,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * @param {TypeScriptDocumentRegistry} documentRegistry - The TypeScript document registry that can be used
      * to manage TypeScript document references.
      */
-    constructor(textEditor: TextEditor, documentRegistry: TypeScriptDocumentRegistry) {
+    constructor(textEditor: TextEditor, documentRegistry: TypeScriptDocumentRegistry)
+    {
         this._textEditor = textEditor;
         this._textBuffer = this._textEditor.getBuffer();
         this._documentRegistry = documentRegistry;
@@ -44,42 +45,47 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
 
         var onContentsChanging =
             TypeScriptTextEditor.createOnContentsChangingObservable(this._textEditor)
-                .subscribe(() => {
-                        this._onContentsChanging.onNext(this);
-                    });
+                .subscribe(() =>
+                {
+                    this._onContentsChanging.onNext(this);
+                });
 
         var onContentsChangedSubscription =
             TypeScriptTextEditor.createOnContentsChangedObservable(this._textEditor)
-                .subscribe(() => {
-                        this._onContentsChanged.onNext(this);
-                    });
+                .subscribe(() =>
+                {
+                    this._onContentsChanged.onNext(this);
+                });
 
         var onCursorChangedSubscription =
             TypeScriptTextEditor.createOnCursorChangedPositionObservable(this._textEditor)
-                .select((_, idx: number, obs: Rx.Observable<void>) => {
-                        return this._textEditor.getLastCursor().getScreenPosition();
-                    })
-                .subscribe((point: Point) => {
-                        this._onCursorPositionChanged.onNext(point);
-                    });
+                .select((_, idx: number, obs: Rx.Observable<void>) =>
+                {
+                    return this._textEditor.getLastCursor().getScreenPosition();
+                })
+                .subscribe((point: Point) =>
+                {
+                    this._onCursorPositionChanged.onNext(point);
+                });
 
         var onDestroySubscription =
             TypeScriptTextEditor.createOnDestroyObservable(this._textEditor)
-                .subscribe(() => {
-                        this._onClosed.onNext(this);
+                .subscribe(() =>
+                {
+                    this._onClosed.onNext(this);
 
-                        this._onContentsChanging.onCompleted();
-                        this._onContentsChanged.onCompleted();
-                        this._onCursorPositionChanged.onCompleted();
-                        this._onClosed.onCompleted();
+                    this._onContentsChanging.onCompleted();
+                    this._onContentsChanged.onCompleted();
+                    this._onCursorPositionChanged.onCompleted();
+                    this._onClosed.onCompleted();
 
-                        onContentsChanging.dispose();
-                        onContentsChangedSubscription.dispose();
-                        onCursorChangedSubscription.dispose();
-                        onDestroySubscription.dispose();
+                    onContentsChanging.dispose();
+                    onContentsChangedSubscription.dispose();
+                    onCursorChangedSubscription.dispose();
+                    onDestroySubscription.dispose();
 
-                        this._languageService.dispose();
-                    });
+                    this._languageService.dispose();
+                });
 
         this._documentRegistry.openBufferedDocumentForEditor(this);
         this._languageService = ts.createLanguageService(this, this._documentRegistry);
@@ -88,21 +94,24 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
     /**
      * Gets the underlying text editor being wrapped by the current TypeScript text editor.
      */
-    public get textEditor(): TextEditor {
+    public get textEditor(): TextEditor
+    {
         return this._textEditor;
     }
 
     /**
      * Gets the full path of the current TypeScript text editor.
      */
-    public get path(): string {
+    public get path(): string
+    {
         return this._normalizedPath;
     }
 
     /**
      * Gets the underlying Atom TextBuffer.
      */
-    public get textBuffer(): TextBuffer {
+    public get textBuffer(): TextBuffer
+    {
         return this._textBuffer;
     }
 
@@ -110,7 +119,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * Gets an observable that when subscribed to will indicate when the TypeScript text
      * editor is closed.
      */
-    public get onClosed(): Rx.Observable<TypeScriptTextEditor> {
+    public get onClosed(): Rx.Observable<TypeScriptTextEditor>
+    {
         return this._onClosed;
     }
 
@@ -118,7 +128,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * Gets an observable that when subscribed to will indicate when the TypeScript text
      * editor contents have began changing.
      */
-    public get onContentsChaning(): Rx.Observable<TypeScriptTextEditor> {
+    public get onContentsChaning(): Rx.Observable<TypeScriptTextEditor>
+    {
         return this._onContentsChanging;
     }
 
@@ -126,7 +137,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * Gets an observable that when subscribed to will indicate when the TypeScript text
      * editor contents change.
      */
-    public get onContentsChanged(): Rx.Observable<TypeScriptTextEditor> {
+    public get onContentsChanged(): Rx.Observable<TypeScriptTextEditor>
+    {
         return this._onContentsChanged;
     }
 
@@ -134,14 +146,16 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * Gets an observable that when subscribed to will indicate when the cursor position
      * has changed in the editor.
      */
-    public get onCursorPositionChanged(): Rx.Observable<Point> {
+    public get onCursorPositionChanged(): Rx.Observable<Point>
+    {
         return this._onCursorPositionChanged;
     }
 
     /**
      * Retrieves the current TypeScript diagnostic messages.
      */
-    public getLanguageDiagnostics(): Array<ts.Diagnostic> {
+    public getLanguageDiagnostics(): Array<ts.Diagnostic>
+    {
         var diagnostics = this._languageService.getSemanticDiagnostics(this._normalizedPath);
 
         return diagnostics ? diagnostics : [ ];
@@ -152,7 +166,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      *
      * @param {string} message - The message to be logged.
      */
-    public log(message: string): void {
+    public log(message: string): void
+    {
         console.log(message + " (" + this._normalizedPath + ")");
     }
 
@@ -162,7 +177,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * @returns {Array<string>} An array of strings representing the full paths of the TypeScript documents
      * referenced by the current TypeScript text editor.
      */
-    public getScriptFileNames(): Array<string> {
+    public getScriptFileNames(): Array<string>
+    {
         return this._documentRegistry.getScriptFileNamesForEditor(this);
     }
 
@@ -171,7 +187,8 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      *
      * @returns {string} The version of the TypeScript document associated with the supplied path.
      */
-    public getScriptVersion(filename: string): string {
+    public getScriptVersion(filename: string): string
+    {
         return this._documentRegistry.getDocument(filename).version;
     }
 
@@ -180,21 +197,24 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      *
      * @returns {boolean} true if the TypeScript document is currently open in the Atom workspace; otherwise false.
      */
-    public getScriptIsOpen(filename: string): boolean {
+    public getScriptIsOpen(filename: string): boolean
+    {
         return false;
     }
 
     /**
      * Retrieves the byte order mark of a given TypeScript document.
      */
-    public getScriptByteOrderMark(filename: string): ts.ByteOrderMark {
+    public getScriptByteOrderMark(filename: string): ts.ByteOrderMark
+    {
         return this._documentRegistry.getDocument(filename).byteOrderMark;
     }
 
     /**
      * Retrieves the script snapshot from the contents of the TypeScript document.
      */
-    public getScriptSnapshot(filename: string): TypeScript.IScriptSnapshot {
+    public getScriptSnapshot(filename: string): TypeScript.IScriptSnapshot
+    {
         var typescriptDocument: TypeScriptDocument = this._documentRegistry.getDocument(filename);
 
         return TypeScript.ScriptSnapshot.fromString(typescriptDocument.text);
@@ -205,47 +225,57 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      *
      * Returns null allowing TypeScript to localize the diagnostic messages that it produces.
      */
-    public getLocalizedDiagnosticMessages(): any {
+    public getLocalizedDiagnosticMessages(): any
+    {
         return null; // Use the TypeScript localized messages
     }
 
     /**
      * Retrieves a cancellation token.
      */
-    public getCancellationToken(): ts.CancellationToken {
+    public getCancellationToken(): ts.CancellationToken
+    {
         return null;
     }
 
     /**
      * Retrieves the full path to the TypeScript default library declaration file.
      */
-    public getDefaultLibFilename(): string {
+    public getDefaultLibFilename(): string
+    {
         return this._documentRegistry.getDefaultLibFilename();
     }
 
     /**
      * Retrieves the compilation settings for the current TypeScript text editor.
      */
-    public getCompilationSettings(): ts.CompilerOptions {
-        return {
+    public getCompilationSettings(): ts.CompilerOptions
+    {
+        var settings: ts.CompilerOptions =
+        {
             noLib: false,
             module: ts.ModuleKind.CommonJS, //ts.ModuleKind.None,
             target: ts.ScriptTarget.ES5,
             noResolve: false
-        };
+
+        }
+
+        return settings;
     }
 
     /**
      * Retrieves the TypeScript code completion information from the current cursor position.
      */
-    public getEditorCodeCompletionsForCursor(): ts.CompletionInfo {
+    public getEditorCodeCompletionsForCursor(): ts.CompletionInfo
+    {
         var cursorPosition: Point = this._textEditor.getCursorBufferPosition();
         var cursorScope: ScopeDescriptor = this._textEditor.scopeDescriptorForBufferPosition(cursorPosition);
 
         var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
         var typeScriptPosition = bufferLineStartPositions[cursorPosition.row] + cursorPosition.column;
 
-        try {
+        try
+        {
             return this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
         }
         catch (error)
@@ -259,14 +289,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * @param {TextEditor} textEditor - The Atom TextEditor.
      * @returns {Rx.Observable<void>} Returns an observable stream of text editor changes.
      */
-    private static createOnContentsChangingObservable(textEditor: TextEditor): Rx.Observable<void> {
+    private static createOnContentsChangingObservable(textEditor: TextEditor): Rx.Observable<void>
+    {
         var addHandler =
-            (h) => {
-                return textEditor.onDidChange(h);
-            };
+            (h) => { return textEditor.onDidChange(h); };
 
         var removeHandler =
-            (...args) => {
+            (...args) =>
+            {
                 var disposable = <Disposable>args[1];
 
                 disposable.dispose();
@@ -282,14 +312,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * @param {TextEditor} textEditor - The Atom TextEditor.
      * @returns {Rx.Observable<void>} Returns an observable stream of text editor changes.
      */
-    private static createOnContentsChangedObservable(textEditor: TextEditor): Rx.Observable<void> {
+    private static createOnContentsChangedObservable(textEditor: TextEditor): Rx.Observable<void>
+    {
         var addHandler =
-            (h) => {
-                return textEditor.onDidStopChanging(h);
-            };
+            (h) => { return textEditor.onDidStopChanging(h); };
 
         var removeHandler =
-            (...args) => {
+            (...args) =>
+            {
                 var disposable = <Disposable>args[1];
 
                 disposable.dispose();
@@ -305,14 +335,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * @param {TextEditor} textEditor - The Atom TextEditor.
      * @returns {Rx.Observable<void>} Returns an observable stream of text editor destroyed events.
      */
-    private static createOnDestroyObservable(textEditor: TextEditor): Rx.Observable<void> {
+    private static createOnDestroyObservable(textEditor: TextEditor): Rx.Observable<void>
+    {
         var addHandler =
-            (h) => {
-                return textEditor.onDidDestroy(h);
-            };
+            (h) => { return textEditor.onDidDestroy(h); };
 
         var removeHandler =
-            (...args) => {
+            (...args) =>
+            {
                 var disposable = <Disposable>args[1];
 
                 disposable.dispose();
@@ -328,14 +358,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost {
      * @param {TextEditor} textEditor - The Atom TextEditor.
      * @returns {Rx.Observable<void>} Returns an observable stream of text editor cursor changed events.
      */
-    private static createOnCursorChangedPositionObservable(textEditor: TextEditor): Rx.Observable<void> {
+    private static createOnCursorChangedPositionObservable(textEditor: TextEditor): Rx.Observable<void>
+    {
         var addHandler =
-            (h) => {
-                return textEditor.getLastCursor().onDidChangePosition(h);
-            };
+            (h) => { return textEditor.getLastCursor().onDidChangePosition(h); };
 
         var removeHandler =
-            (...args) => {
+            (...args) =>
+            {
                 var disposable = <Disposable>args[1];
 
                 disposable.dispose();

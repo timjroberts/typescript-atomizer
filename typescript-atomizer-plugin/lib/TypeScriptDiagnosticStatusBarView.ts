@@ -1,4 +1,4 @@
-/// <reference path="./HTMLExtensions.d.ts" />
+/// <reference path="./core/HTMLExtensions.d.ts" />
 /// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.d.ts" />
 
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
@@ -6,7 +6,8 @@ import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar"
 var elementPrototype: ModelBasedHTMLElement<TypeScriptDiagnosticStatusBar> = Object.create(HTMLElement.prototype);
 
 elementPrototype.createdCallback =
-    function() {
+    function()
+    {
         this.statusBarElementDiv = document.createElement("div");
 
         this.errorStatusDiv = document.createElement("span");
@@ -24,27 +25,38 @@ elementPrototype.createdCallback =
     }
 
 //elementPrototype.attachedCallback =
-//    function() {
+//    function()
+//    {
 //
 //    }
 
 elementPrototype.setModel =
-    function(statusBar: TypeScriptDiagnosticStatusBar) {
-        statusBar.onVisibilityChanged.subscribe((visible: boolean) => {
+    function(statusBar: TypeScriptDiagnosticStatusBar)
+    {
+        statusBar.onVisibilityChanged
+            .subscribe((visible: boolean) =>
+            {
                 this.statusBarElementDiv.hidden = !visible;
             });
 
-        statusBar.onErrorStateChanged.subscribe((errorState: boolean) => {
-                if (errorState) {
+        statusBar.onErrorStateChanged
+            .subscribe((errorState: boolean) =>
+            {
+                if (errorState)
+                {
                     this.errorStatusDiv.classList.remove("highlight-success");
                     this.errorStatusDiv.classList.add("highlight-error");
-                } else {
+                }
+                else
+                {
                     this.errorStatusDiv.classList.remove("highlight-error");
                     this.errorStatusDiv.classList.add("highlight-success");
                 }
             });
 
-        statusBar.onMessageChanged.subscribe((message: string) => {
+        statusBar.onMessageChanged
+            .subscribe((message: string) =>
+            {
                 this.highlightedErrorDiv.textContent = " " + message;
             });
     }

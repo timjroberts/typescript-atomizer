@@ -1,13 +1,14 @@
 /// <reference path="../node_modules/typescript-atomizer-typings/node/fs.d.ts" />
 /// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
-/// <reference path="./NumberIndexDictionary.d.ts" />
+/// <reference path="./core/NumberIndexDictionary.d.ts" />
 
 import fs = require("fs");
 
 /**
  * Represents a TypeScript document.
  */
-class TypeScriptDocument {
+class TypeScriptDocument
+{
     private _normalizedPath: string;
     private _referenceCount: number;
     private _compiledSourceFileObjects: NumberIndexDictionary<ts.SourceFile>;
@@ -24,14 +25,18 @@ class TypeScriptDocument {
      * @param {string} documentPath - The full path of the TypeScript document.
      */
     constructor(documentPath: string)
-    constructor(p1: any) {
-        if (p1 instanceof TypeScriptDocument) {
+    constructor(p1: any)
+    {
+        if (p1 instanceof TypeScriptDocument)
+        {
             var typescriptDocumentToCopy = <TypeScriptDocument>p1;
 
             this._normalizedPath = typescriptDocumentToCopy._normalizedPath;
             this._referenceCount = typescriptDocumentToCopy._referenceCount;
             this._compiledSourceFileObjects = typescriptDocumentToCopy._compiledSourceFileObjects;
-        } else {
+        }
+        else
+        {
             var documentPath = <string>p1;
 
             this._normalizedPath = TypeScript.switchToForwardSlashes(documentPath);
@@ -68,7 +73,8 @@ class TypeScriptDocument {
     /**
      * Increments and returns the internal reference count.
      */
-    public addReference(): number {
+    public addReference(): number
+    {
         this._referenceCount++;
 
         return this._referenceCount;
@@ -77,7 +83,8 @@ class TypeScriptDocument {
     /**
      * Decrements and returns the internal reference count.
      */
-    public release(): number {
+    public release(): number
+    {
         this._referenceCount--;
 
         return this._referenceCount;
@@ -89,11 +96,13 @@ class TypeScriptDocument {
      * @param {ts.ScriptTarget} scriptTarget - The script target for which a SourceFile is required.
      * @returns {ts.SourceFile} The up to date SourceFile compiled from the current document text.
      */
-    public getSourceFile(scriptTarget: ts.ScriptTarget): ts.SourceFile {
+    public getSourceFile(scriptTarget: ts.ScriptTarget): ts.SourceFile
+    {
         var sourceFile: ts.SourceFile = this._compiledSourceFileObjects[scriptTarget];
         var currentVersion = this.getCurrentDocumentVersion();
 
-        if (!sourceFile || sourceFile.version != currentVersion) {
+        if (!sourceFile || sourceFile.version != currentVersion)
+        {
             sourceFile = ts.createSourceFile(this._normalizedPath, this.getDocumentText(), scriptTarget, currentVersion, false);
 
             this._compiledSourceFileObjects[scriptTarget] = sourceFile;
@@ -108,7 +117,8 @@ class TypeScriptDocument {
      * @returns {string} The {TypeScriptDocument} class represents a static file and therefore it will
      * always return "0".
      */
-    protected getCurrentDocumentVersion(): string {
+    protected getCurrentDocumentVersion(): string
+    {
         return "0";
     }
 
@@ -118,14 +128,16 @@ class TypeScriptDocument {
      * @returns {string} The {TypeScriptDocument} class represents a static file and therefore it will
      * return the contents of the file from disk.
      */
-    protected getDocumentText(): string {
+    protected getDocumentText(): string
+    {
         return fs.readFileSync(this._normalizedPath, "utf8");
     }
 
     /**
      * Retrieves the byte order mark of the current TypeScript document.
      */
-    protected getByteOrderMark(): ts.ByteOrderMark {
+    protected getByteOrderMark(): ts.ByteOrderMark
+    {
         return ts.ByteOrderMark.Utf8;
     }
 }

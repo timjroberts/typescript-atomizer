@@ -5,7 +5,8 @@ import Rx = require("rx");
 /**
  * Provides the state for the global TypeScript diagnostic status bar.
  */
-class TypeScriptDiagnosticStatusBar {
+class TypeScriptDiagnosticStatusBar
+{
     private _onErrorStateChanged: Rx.Subject<boolean>;
     private _onMessageChanged: Rx.Subject<string>;
     private _onVisibilityChanged: Rx.Subject<boolean>;
@@ -15,7 +16,8 @@ class TypeScriptDiagnosticStatusBar {
     /**
      * Initializes a new TypeScript diagnostic status bar.
      */
-    constructor() {
+    constructor()
+    {
         this._onErrorStateChanged = new Rx.Subject<boolean>();
         this._onMessageChanged = new Rx.Subject<string>();
         this._onVisibilityChanged = new Rx.Subject<boolean>();
@@ -28,7 +30,8 @@ class TypeScriptDiagnosticStatusBar {
     /**
      * Sets an indicator represening whether the status bar is indicating a document that is in error.
      */
-    public set inError(value: boolean) {
+    public set inError(value: boolean)
+    {
         this._inError = value;
         this._onErrorStateChanged.onNext(value);
     }
@@ -40,7 +43,8 @@ class TypeScriptDiagnosticStatusBar {
     /**
      * Sets the message to be displayed by the status bar.
      */
-    public set message(value: string) {
+    public set message(value: string)
+    {
         this._message = value;
         this._onMessageChanged.onNext(value);
     }
@@ -63,14 +67,16 @@ class TypeScriptDiagnosticStatusBar {
     /**
      * Hides the status bar.
      */
-    public hide(): void {
+    public hide(): void
+    {
         this._onVisibilityChanged.onNext(false);
     }
 
     /**
      * Shows the status bar.
      */
-    public show(): void {
+    public show(): void
+    {
         this._onVisibilityChanged.onNext(true);
     }
 }
