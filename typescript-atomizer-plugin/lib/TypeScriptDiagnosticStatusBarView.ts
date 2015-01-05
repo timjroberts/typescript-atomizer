@@ -1,5 +1,5 @@
 /// <reference path="./core/HTMLExtensions.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.d.ts" />
+/// <reference path="../../typings/rx/rx.d.ts" />
 
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 

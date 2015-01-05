@@ -1,5 +1,5 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/node/fs.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/node/fs.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 /// <reference path="./core/NumberIndexDictionary.d.ts" />
 
 import fs = require("fs");
@@ -59,6 +59,10 @@ class TypeScriptDocument
      * Gets the full path of the current TypeScript document.
      */
     public get path(): string { return this._normalizedPath; }
+    /**
+     * Sets the full path of the current TypeScript document.
+     */
+    public set path(value: string) { this._normalizedPath = TypeScript.switchToForwardSlashes(value); }
 
     /**
      * Gets the byte order mark of the current TypeScript document.

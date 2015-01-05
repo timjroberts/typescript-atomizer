@@ -1,12 +1,14 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/space-pen/space-pen.d.ts" />
 
-import AutoCompleView = require("./core/views/AutoCompleteView");
+import SpacePen = require("space-pen");
+import AutoCompleteView = require("./core/views/AutoCompleteView");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 
 /**
  * Represents an 'auto-complete' view for a TypeScript text editor.
  */
-class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry>
+class TypeScriptAutoCompleteView extends AutoCompleteView<ts.CompletionEntry>
 {
     private _typescriptTextEditor: TypeScriptTextEditor;
 
@@ -33,41 +35,22 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry>
     {
         var completionInfo: ts.CompletionInfo = this._typescriptTextEditor.getEditorCodeCompletionsForCursor();
 
-        var completions: Array<ts.CompletionEntry> =
-            completionInfo && completionInfo.entries
+        return completionInfo && completionInfo.entries
             ? completionInfo.entries
             : [ ];
-
-        return completions;
     }
     /**
-     * Returns the HTML view for a given auto-complete item.
+     * Renderes the HTML view for a given auto-complete item (includes its kind icon and name).
      *
-     * Derived classes should override this function to override the default view.
-     *
-     * @param item - An item containing the data that can be used to render the item's view.
-     * @returns A HTMLElement representing the view of the auto-complete item.
+     * @param item - A completion entry item for which the view should be rendered.
      */
-    protected getViewForItem(item: ts.CompletionEntry): HTMLElement
+    protected renderViewForItem(item: ts.CompletionEntry): void
     {
-        var spanElement: HTMLElement = document.createElement("span");
-
-        spanElement.classList.add("autocomplete-item");
-
-        var kindSpanElement = document.createElement("span");
-        var nameSpanElement = document.createElement("span");
-
-        kindSpanElement.classList.add("inline-block");
-        kindSpanElement.classList.add("kind");
-        kindSpanElement.classList.add(TypeScriptAutoCompleteView.getClassForKind(item));
-
-        nameSpanElement.classList.add("name");
-        nameSpanElement.textContent = item.name;
-
-        spanElement.appendChild(kindSpanElement);
-        spanElement.appendChild(nameSpanElement);
-
-        return spanElement;
+        AutoCompleteView.span({ class: "autocomplete-item" }, () =>
+            {
+                AutoCompleteView.span({ class: "inline-block kind " + TypeScriptAutoCompleteView.getClassForKind(item) });
+                AutoCompleteView.span({ class: "name" }, item.name);
+            });
     }
 
     /**
@@ -85,8 +68,11 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry>
         if (kind === "type parameter")
             return "typeparam";
 
-        if (kind === "var" || kind === "local var")
-            return "parameter";
+        if (kind === "var")
+            return "localvar";
+            
+        if (kind === "local var")
+            return "localvar-protected";
 
         if (kind === "method")
             return TypeScriptAutoCompleteView.appendClassNameForKindModifier("function", item.kindModifiers);
@@ -106,7 +92,7 @@ class TypeScriptAutoCompleteView extends AutoCompleView<ts.CompletionEntry>
      */
     private static appendClassNameForKindModifier(currentClassName: string, modifier: string): string
     {
-        if (modifier === "" || modifier === "public")
+        if (modifier === "" || modifier === "public" || modifier === "declare")
             return currentClassName;
 
         return currentClassName + "-" + modifier;

@@ -1,5 +1,7 @@
-/// <reference path="../../../node_modules/typescript-atomizer-typings/atom-space-pen-views.d.ts" />
+/// <reference path="../../../../typings/atom-space-pen-views.d.ts" />
+/// <reference path="../../../../typings/space-pen/space-pen.d.ts" />
 
+import SpacePen = require("space-pen");
 import AtomSpacePenViews = require("atom-space-pen-views");
 
 /**
@@ -39,29 +41,29 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
      */
     public toggle(): boolean
     {
-        this.isVisible()
-            ? this.cancel()
-            : this.attach();
+        if (this.isVisible())
+            this.cancel();
+        else
+            this.attach();
 
         return this.isVisible();
     }
 
     /**
-     * Returns the HTML view for a given auto-complete item.
+     * Returns the rendered HTML view for a given auto-complete item.
      *
      * @param item - An auto-complete item containing the data that can be used to render the item's view.
-     * @returns A HTMLElement representing the view of the auto-complete item.
+     * @returns A JQuery object representing the view of the auto-complete item.
      */
-    public viewForItem(item: AutoCompleteItem<TItem>): HTMLElement
+    public viewForItem(item: AutoCompleteItem<TItem>): JQuery
     {
-        var itemElemenet: HTMLElement = document.createElement("li");
-        var spanElement: HTMLElement = document.createElement("span");
-
-        spanElement.appendChild(this.getViewForItem(item.item));
-
-        itemElemenet.appendChild(spanElement);
-
-        return itemElemenet;
+        return AutoCompleteView.render(() =>
+            {
+                AutoCompleteView.li(() =>
+                    {
+                        AutoCompleteView.span(this.renderViewForItem(item.item))
+                    })
+            });
     }
 
     /**
@@ -71,11 +73,7 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
      */
     public confirmed(item: AutoCompleteItem<TItem>): void
     {
-        this._textEditor.getSelections()
-            .forEach((selection: Selection) =>
-            {
-                selection.clear();
-            });
+        this._textEditor.getSelections().forEach((s: Selection) => s.clear());
 
         this.cancel();
 
@@ -84,13 +82,7 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
 
         this.replaceSelectedTextWithMatch(item);
 
-        this._textEditor.getCursors()
-            .forEach((cursor: Cursor) =>
-            {
-                var cusorPosition: Point = cursor.getBufferPosition();
-
-                cursor.setBufferPosition([cusorPosition.row, cusorPosition.column + item.suffix.length]);
-            });
+        this._textEditor.getCursors().forEach((c: Cursor) => this.setBufferPositionForSelectedItem(c, item));
     }
 
     /**
@@ -129,20 +121,15 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
     }
 
     /**
-     * Returns the HTML view for a given auto-complete item.
+     * Renderes the default HTML view for a given auto-complete item.
      *
      * Derived classes should override this function to override the default view.
      *
      * @param item - An item containing the data that can be used to render the item's view.
-     * @returns A HTMLElement representing the view of the auto-complete item.
      */
-    protected getViewForItem(item: TItem): HTMLElement
+    protected renderViewForItem(item: TItem): void
     {
-        var spanElement: HTMLElement = document.createElement("span");
-
-        spanElement.textContent = this._getDisplayTextFunc(item);
-
-        return spanElement;
+        AutoCompleteView.span(this._getDisplayTextFunc(item));
     }
 
     /**
@@ -155,6 +142,19 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
     protected getCompletionItems(): Array<TItem>
     {
         return [ ];
+    }
+
+    /**
+     * Sets the buffer position within a cusor for a selected auto-complete item.
+     *
+     * @param cursor - The cursor for which the buffer position should be changed.
+     * @param selectedItem - The selected auto-complete item from which the buffer position is calculated.
+     */
+    private setBufferPositionForSelectedItem(cursor: Cursor, selectedItem: AutoCompleteItem<TItem>): void
+    {
+        var cusorPosition: Point = cursor.getBufferPosition();
+
+        cursor.setBufferPosition([cusorPosition.row, cusorPosition.column + selectedItem.suffix.length]);
     }
 
     /**
@@ -181,7 +181,7 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
             widestSpan = Math.max(widestSpan, span.offsetWidth);
         });
 
-        (<any>this.list).width(widestSpan + 20);
+        (<any>this.list).width(widestSpan + 22);
         this.width((<any>this.list).outerWidth());
 
         this.storeFocusedElement();

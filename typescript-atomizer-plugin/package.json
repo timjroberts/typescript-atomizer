@@ -23,7 +23,7 @@
     "dependencies":
     {
         "rx": "*",
-        "typescript-atomizer-typings": "*",
+        "space-pen": "*",
         "atom-space-pen-views": "*"
     },
     "devDependencies":

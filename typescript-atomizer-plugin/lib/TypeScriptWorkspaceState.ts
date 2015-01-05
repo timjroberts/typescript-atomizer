@@ -1,8 +1,10 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 
 import ArrayUtils = require("./core/ArrayUtils");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptAutoCompleteView = require("./TypeScriptAutoCompleteView");
+import TypeScriptContextView = require("./TypeScriptContextView");
+import DisposableArray = require("./core/DisposableArray");
 
 /**
  * A private class that represents the global state for an active TypeScript text editor that is
@@ -12,11 +14,12 @@ class TypeScriptWorkspaceState implements Disposable
 {
     private _typescriptTextEditor: TypeScriptTextEditor;
     private _autoCompleteView: TypeScriptAutoCompleteView;
+    private _contextView: TypeScriptContextView;
     private _inError: boolean;
     private _defaultMessage: string;
     private _currentMessage: string;
     private _diagnostics: Array<ts.Diagnostic>;
-    private _diagnosticMarkers: Array<Marker>;
+    private _diagnosticMarkers: DisposableArray<Marker>;
     private _contentsChanging: boolean;
 
     /**
@@ -28,10 +31,14 @@ class TypeScriptWorkspaceState implements Disposable
     {
         this._typescriptTextEditor = typescriptTextEditor;
         this._autoCompleteView = new TypeScriptAutoCompleteView(typescriptTextEditor);
+        this._contextView = new TypeScriptContextView(typescriptTextEditor);
 
         this._diagnostics = [ ];
-        this._diagnosticMarkers = [ ];
+        this._diagnosticMarkers = new DisposableArray<Marker>((m: Marker) => m.destroy());
         this._contentsChanging = false;
+        this._inError = false;
+        this._currentMessage = null;
+        this._defaultMessage = "";
     }
 
     /**
@@ -84,7 +91,7 @@ class TypeScriptWorkspaceState implements Disposable
      */
     public dispose(): void
     {
-        this.disposeCurrentDiagnosticMarkers();
+        this._diagnosticMarkers.dispose();
     }
 
     /**
@@ -99,7 +106,7 @@ class TypeScriptWorkspaceState implements Disposable
         this._defaultMessage = this._inError ? diagnostics.length + " error(s)" : "";
         this._currentMessage = null;
 
-        this.disposeCurrentDiagnosticMarkers();
+        this._diagnosticMarkers.clear();
 
         var textEditor = this._typescriptTextEditor.textEditor;
         var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(textEditor.getText());
@@ -123,7 +130,7 @@ class TypeScriptWorkspaceState implements Disposable
 
                 this._diagnosticMarkers.push(diagnosticMarker);
 
-                textEditor.decorateMarker(diagnosticMarker, { type: "highlight", class: "typescript-error" });
+                textEditor.decorateMarker(diagnosticMarker, { type: "highlight", class: TypeScriptWorkspaceState.getClassForDiagnostic(diagnostic) });
             });
     }
 
@@ -137,13 +144,17 @@ class TypeScriptWorkspaceState implements Disposable
      */
     public updateFromCursorPosition(cursorPosition: Point)
     {
-        var index: number =
-            ArrayUtils.findIndex(this._diagnosticMarkers, (marker: Marker) => { return marker.getScreenRange().containsPoint(cursorPosition); });
+        var index: number = this._diagnosticMarkers.findIndex((m: Marker) => { return m.getScreenRange().containsPoint(cursorPosition); });
 
-        this.message =
-            index >= 0
-            ? this._diagnostics[index].messageText
-            : null;
+        if (index >= 0)
+        {
+            this.message = this._diagnostics[index].messageText;
+            //this.toggleContext();
+        }
+        else
+        {
+            this.message = null;
+        }
     }
 
     /**
@@ -154,18 +165,22 @@ class TypeScriptWorkspaceState implements Disposable
         this._autoCompleteView.toggle();
     }
 
-    /**
-     * Destroys the existing markers representing TypeScript diagnostic messages.
-     */
-    private disposeCurrentDiagnosticMarkers(): void
+    public toggleContext(): void
     {
-        this._diagnosticMarkers
-            .forEach((diagnosticMarker: Marker) =>
-            {
-                diagnosticMarker.destroy();
-            });
+        this._contextView.toggle();
+    }
 
-        this._diagnosticMarkers = [];
+    /**
+     * Returns a class name to be applied for diagnostic.
+     *
+     * @param diagnostic - The TypeScript diagnostic for which a class name should be determined.
+     */
+    private static getClassForDiagnostic(diagnostic: ts.Diagnostic): string
+    {
+        if (diagnostic.category === ts.DiagnosticCategory.Error)
+            return "typescript-error";
+        else
+            return "typescript-warning";
     }
 }
 

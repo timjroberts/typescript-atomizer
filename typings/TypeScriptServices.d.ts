@@ -1,17 +1,20 @@
 
-declare module ts {
+declare module ts
+{
     export enum ModuleKind {
         None,
         CommonJS,
         AMD,
     }
 
-    export enum ScriptTarget {
+    export enum ScriptTarget
+    {
         ES3,
         ES5,
     }
 
-    export interface Diagnostic {
+    export interface Diagnostic
+    {
         file: SourceFile;
         start: number;
         length: number;
@@ -20,13 +23,15 @@ declare module ts {
         code: number;
     }
 
-    export enum DiagnosticCategory {
+    export enum DiagnosticCategory
+    {
         Warning,
         Error,
         Message,
     }
 
-    export interface CompilerOptions {
+    export interface CompilerOptions
+    {
         charset?: string;
         codepage?: number;
         declaration?: boolean;
@@ -51,33 +56,39 @@ declare module ts {
         [option: string]: any;
     }
 
-    export interface LiteralExpression {
+    export interface LiteralExpression
+    {
         text: string;
     }
 
-    export interface Declaration extends Node {
+    export interface Declaration extends Node
+    {
 
     }
 
-    export interface ImportDeclaration extends Declaration {
+    export interface ImportDeclaration extends Declaration
+    {
         externalModuleName?: LiteralExpression;
     }
 
-    export enum ByteOrderMark {
+    export enum ByteOrderMark
+    {
         None = 0,
         Utf8 = 1,
         Utf16BigEndian = 2,
         Utf16LittleEndian = 3,
     }
 
-    export enum SyntaxKind {
+    export enum SyntaxKind
+    {
         ImportDeclaration,
         ModuleDeclaration,
         StringLiteral
     }
 
     /*
-    export enum NodeFlags {
+    export enum NodeFlags
+    {
         Export           = 0x00000001,  // Declarations
         Ambient          = 0x00000002,  // Declarations
         QuestionMark     = 0x00000004,  // Parameter/Property/Method
@@ -95,30 +106,36 @@ declare module ts {
     }
     */
 
-    export interface Node extends TextRange {
+    export interface Node extends TextRange
+    {
         kind: SyntaxKind;
         //flags: NodeFlags;
     }
 
-    export interface Statement extends Node {
+    export interface Statement extends Node
+    {
 
     }
 
-    export interface Block {
+    export interface Block
+    {
         byteOrderMark: ByteOrderMark;
         statements: Statement[];
     }
 
-    export interface TextRange {
+    export interface TextRange
+    {
         pos: number;
         end: number;
     }
 
-    export interface FileReference extends TextRange {
+    export interface FileReference extends TextRange
+    {
         filename: string;
     }
 
-    export interface SourceFile extends Block {
+    export interface SourceFile extends Block
+    {
         filename: string;
         version: string;
         referencedFiles: FileReference[];
@@ -128,7 +145,8 @@ declare module ts {
         update(scriptSnapshot: TypeScript.IScriptSnapshot, version: number, isOpen: boolean, textChangeRange: TypeScript.TextChangeRange): SourceFile;
     }
 
-    export interface DocumentRegistry {
+    export interface DocumentRegistry
+    {
         acquireDocument(
             filename: string,
             compilationSettings: CompilerOptions,
@@ -148,25 +166,30 @@ declare module ts {
         releaseDocument(filename: string, compilationSettings: CompilerOptions): void
     }
 
-    export interface CompletionEntry {
+    export interface CompletionEntry
+    {
         name: string;
         kind: string;            // see ScriptElementKind
         kindModifiers: string;   // see ScriptElementKindModifier, comma separated
     }
-    export interface CompletionInfo {
+    export interface CompletionInfo
+    {
         isMemberCompletion: boolean;
         entries: CompletionEntry[];
     }
 
-    export interface CancellationToken {
+    export interface CancellationToken
+    {
         isCancellationRequested(): boolean;
     }
 
-    export interface Logger {
+    export interface Logger
+    {
         log(s: string): void;
     }
 
-    export interface LanguageServiceHost extends Logger {
+    export interface LanguageServiceHost extends Logger
+    {
         getCompilationSettings(): CompilerOptions;
         getScriptFileNames(): string[];
         getScriptVersion(fileName: string): string;
@@ -177,7 +200,8 @@ declare module ts {
         getDefaultLibFilename(): string;
     }
 
-    export interface LanguageService {
+    export interface LanguageService
+    {
         getSyntacticDiagnostics(fileName: string): Diagnostic[];
         getSemanticDiagnostics(fileName: string): Diagnostic[];
 
@@ -199,9 +223,12 @@ declare module ts {
     export function getDirectoryPath(path: string): string;
 }
 
-declare module TypeScript {
-    module TextUtilities {
-        export interface ICharacterSequence {
+declare module TypeScript
+{
+    module TextUtilities
+    {
+        export interface ICharacterSequence
+        {
             charCodeAt(index: number): number;
             length: number;
         }
@@ -209,7 +236,8 @@ declare module TypeScript {
         export function parseLineStarts(text: ICharacterSequence): number[];
     }
 
-    export interface IScriptSnapshot {
+    export interface IScriptSnapshot
+    {
         getText(start: number, end: number): string;
 
         getLength(): number;
@@ -219,10 +247,12 @@ declare module TypeScript {
         getTextChangeRangeSinceVersion(scriptVersion: number): TextChangeRange;
     }
 
-    export class TextChangeRange {
+    export class TextChangeRange
+    {
     }
 
-    export class ScriptSnapshot {
+    export class ScriptSnapshot
+    {
         public static fromString(text: string): IScriptSnapshot;
     }
 

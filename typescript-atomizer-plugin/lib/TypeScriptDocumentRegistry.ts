@@ -1,8 +1,8 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/atom.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/node/fs.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.async.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/atom.d.ts" />
+/// <reference path="../../typings/node/fs.d.ts" />
+/// <reference path="../../typings/rx/rx.d.ts" />
+/// <reference path="../../typings/rx/rx.async.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 /// <reference path="./core/StringIndexDictionary.d.ts" />
 
 import fs = require("fs");
@@ -14,7 +14,7 @@ import BufferedTypeScriptDocument = require("./BufferedTypeScriptDocument");
 /**
  * Provides a registry of TypeScript documents.
  */
-class TypeScriptDocumentRegistry implements ts.DocumentRegistry
+class TypeScriptDocumentRegistry implements ts.DocumentRegistry, Disposable
 {
     private _typeScriptLibPath: string;
     private _documents: StringIndexDictionary<TypeScriptDocument>;
@@ -35,6 +35,12 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry
     }
 
     /**
+     * Disposes of the current TypeScript document registry.
+     */
+    public dispose()
+    { }
+
+    /**
      * Ensures that a buffered TypeScript document is open in the document registry for a given
      * TypeScript text editor.
      *
@@ -52,6 +58,29 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry
             tsTextEditor.onContentsChanged.subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanged.call(this, tsTextEditor));
             tsTextEditor.onClosed.subscribe((tsTextEditor) => this.onTypeScriptTextEditorClosed.call(this, tsTextEditor));
         }
+    }
+
+    /**
+     * Updates the path of a TypeScript document.
+
+     * @param {TypeScriptTextEditor} tsTextEditor - The TypeScript text editor for which the path is changing.
+     */
+    public updateDocumentPath(tsTextEditor: TypeScriptTextEditor, newPath: string): void
+    {
+        var typescriptDocument: TypeScriptDocument = this._documents[newPath];
+
+        if (typescriptDocument)
+            return;
+
+        typescriptDocument = this._documents[tsTextEditor.path];
+
+        typescriptDocument.path = newPath;
+
+        if (typescriptDocument instanceof BufferedTypeScriptDocument)
+            (<BufferedTypeScriptDocument>typescriptDocument).incrementVersion();
+
+        this._documents[newPath] = typescriptDocument;
+        this._documents[tsTextEditor.path] = undefined;
     }
 
     /**
@@ -142,7 +171,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry
     {
         var typescriptDocument: TypeScriptDocument = this._documents[filename];
 
-        TypeScriptDocumentRegistry.checkDocument(filename, typescriptDocument);
+        if (!typescriptDocument)
+            return;
 
         if (typescriptDocument.release() === 0)
             this._documents[filename] = undefined;
@@ -269,7 +299,7 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry
                     : ts.combinePaths(basePath, fileRef.filename);
                 var normalizedPath = ts.normalizePath(path);
 
-                if (!fs.existsSync(normalizedPath))
+                if (!fs.existsSync(normalizedPath) || fs.lstatSync(normalizedPath).isDirectory())
                     return;
 
                 var typescriptDocument: TypeScriptDocument = this.getOrCreateTypeScriptDocument(normalizedPath);

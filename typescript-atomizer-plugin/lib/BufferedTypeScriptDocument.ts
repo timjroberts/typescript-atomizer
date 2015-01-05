@@ -1,4 +1,4 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/atom.d.ts" />
+/// <reference path="../../typings/atom.d.ts" />
 
 import TypeScriptDocument = require("./TypeScriptDocument");
 
@@ -55,9 +55,7 @@ class BufferedTypeScriptDocument extends TypeScriptDocument
      */
     public addBufferReference(): number
     {
-        this._bufferReferenceCount++;
-
-        return this._bufferReferenceCount;
+        return this._bufferReferenceCount++;
     }
 
     /**
@@ -65,9 +63,7 @@ class BufferedTypeScriptDocument extends TypeScriptDocument
      */
     public releaseBuffer(): number
     {
-        this._bufferReferenceCount--;
-
-        return this._bufferReferenceCount;
+        return this._bufferReferenceCount--;
     }
 
     /**

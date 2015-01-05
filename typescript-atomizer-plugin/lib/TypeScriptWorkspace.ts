@@ -1,12 +1,13 @@
-/// <reference path="./core/StringIndexDictionary.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/atom.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="./core/NumberIndexDictionary.d.ts" />
+/// <reference path="../../typings/atom.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 
 import Rx = require("rx");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
 import TypeScriptWorkspaceState = require("./TypeScriptWorkspaceState");
+import CompositeDisposable = require("./core/CompositeDisposable");
 
 /**
  * Orchestrates the state of the user interface in regards to the open TypeScript text editors and any global
@@ -15,12 +16,12 @@ import TypeScriptWorkspaceState = require("./TypeScriptWorkspaceState");
 class TypeScriptWorkspace implements Disposable
 {
     private _atom: AtomGlobal;
-    private _textEditorStates: StringIndexDictionary<TypeScriptWorkspaceState>;
+    private _textEditorStates: NumberIndexDictionary<TypeScriptWorkspaceState>;
     private _workspace: Workspace;
     private _workspaceView: WorkspaceView;
     private _viewRegistry: ViewRegistry;
     private _statusBar: TypeScriptDiagnosticStatusBar;
-    private _disposables: Array<Disposable>;
+    private _commands: CompositeDisposable;
 
     /**
      * Initializes a new {TypeScriptWorkspace}.
@@ -42,15 +43,14 @@ class TypeScriptWorkspace implements Disposable
         onTypeScriptTextEditorOpened.subscribe((tsTextEditor: TypeScriptTextEditor) => this.onTypeScriptTextEditorOpened.call(this, tsTextEditor));
         onTextEditorChanged.subscribe((textEditor: TextEditor) => this.onTextEditorChanged.call(this, textEditor));
 
-        this._disposables =
-            [
-                this._atom.commands.add("atom-text-editor[data-grammar='source typescript']",
-                                                               "typescript-atomizer-autocomplete:toggle",
-                                                               (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)),
-                this._atom.commands.add("atom-text-editor[mini]",
-                                                               "typescript-atomizer-autocomplete:toggle",
-                                                               (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent))
-            ];
+        this._commands = new CompositeDisposable();
+
+        this._commands.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript']",
+                                                    "typescript-atomizer-autocomplete:toggle",
+                                                    (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)));
+        this._commands.push(this._atom.commands.add("atom-text-editor[mini]",
+                                                    "typescript-atomizer-autocomplete:toggle",
+                                                    (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)));
     }
 
     /**
@@ -58,11 +58,7 @@ class TypeScriptWorkspace implements Disposable
      */
     public dispose(): void
     {
-        this._disposables
-            .forEach((disposable: Disposable) =>
-            {
-                disposable.dispose();
-            });
+        this._commands.dispose();
     }
 
     /**
@@ -72,7 +68,7 @@ class TypeScriptWorkspace implements Disposable
      */
     private onTypeScriptTextEditorOpened(typescriptTextEditor: TypeScriptTextEditor): void
     {
-        this._textEditorStates[typescriptTextEditor.path] = new TypeScriptWorkspaceState(typescriptTextEditor);
+        this._textEditorStates[typescriptTextEditor.id] = new TypeScriptWorkspaceState(typescriptTextEditor);
 
         typescriptTextEditor.onContentsChaning
             .subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanging.call(this, tsTextEditor));
@@ -101,7 +97,7 @@ class TypeScriptWorkspace implements Disposable
             return;
         }
 
-        this.updateStatusBar(this._textEditorStates[TypeScript.switchToForwardSlashes(textEditor.getPath())]);
+        this.updateStatusBar(this._textEditorStates[textEditor.id]);
     }
 
     /**
@@ -111,7 +107,7 @@ class TypeScriptWorkspace implements Disposable
      */
     public onTypeScriptTextEditorContentsChanging(typescriptTextEditor: TypeScriptTextEditor)
     {
-        var state = this._textEditorStates[typescriptTextEditor.path];
+        var state = this._textEditorStates[typescriptTextEditor.id];
 
         state.contentsChanging = true;
     }
@@ -123,7 +119,7 @@ class TypeScriptWorkspace implements Disposable
      */
     private onTypeScriptTextEditorContentsChanged(typescriptTextEditor: TypeScriptTextEditor): void
     {
-        var state = this._textEditorStates[typescriptTextEditor.path];
+        var state = this._textEditorStates[typescriptTextEditor.id];
 
         if (state.autoCompleteInProgress)
             return;
@@ -141,7 +137,7 @@ class TypeScriptWorkspace implements Disposable
      */
     private onCursorPositionChanged(typescriptTextEditor: TypeScriptTextEditor, point: Point): void
     {
-        var state = this._textEditorStates[typescriptTextEditor.path];
+        var state = this._textEditorStates[typescriptTextEditor.id];
 
         state.updateFromCursorPosition(point);
         this.updateStatusBar(state);
@@ -154,11 +150,11 @@ class TypeScriptWorkspace implements Disposable
      */
     private onTypeScriptTextEditorClosed(typescriptTextEditor: TypeScriptTextEditor): void
     {
-        var state = this._textEditorStates[typescriptTextEditor.path];
+        var state = this._textEditorStates[typescriptTextEditor.id];
 
         state.dispose();
 
-        this._textEditorStates[typescriptTextEditor.path] = undefined;
+        this._textEditorStates[typescriptTextEditor.id] = undefined;
     }
 
     /**
@@ -177,7 +173,7 @@ class TypeScriptWorkspace implements Disposable
 
         htmlEvent.stopPropagation();
 
-        var state: TypeScriptWorkspaceState = this._textEditorStates[TypeScript.switchToForwardSlashes(textEditor.getPath())];
+        var state: TypeScriptWorkspaceState = this._textEditorStates[textEditor.id];
 
         this.executeAfterContentChange(state, () => state.toggleAutoComplete());
     }

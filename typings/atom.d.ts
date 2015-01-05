@@ -1,7 +1,8 @@
 /**
  * Represents an Atom Plugin module.
  */
-interface AtomPluginModule {
+interface AtomPluginModule
+{
     /**
      * Called when Atom activates the plugin.
      */
@@ -16,14 +17,16 @@ interface AtomPluginModule {
 /**
  * Represents a grammar.
  */
-interface Grammar {
+interface Grammar
+{
     /**
      * Gets or sets the name of the grammar.
      */
     name: string;
 }
 
-interface ScanMatch {
+interface ScanMatch
+{
     match: any;
     matchText: string;
     range: Range;
@@ -34,7 +37,8 @@ interface ScanMatch {
 /**
  * A mutable text container with undo/redo support and the ability to annotate logical regions in the text.
  */
-interface TextBuffer {
+interface TextBuffer
+{
     /**
      * Gets the entire text of the buffer.
      */
@@ -55,7 +59,8 @@ interface TextBuffer {
 /**
  * Represents a point in a buffer in row/column coordinates.
  */
-interface Point {
+interface Point
+{
     /**
      * Creates a new {Point} object.
      *
@@ -76,7 +81,8 @@ interface Point {
 /**
  * Represents a region in a buffer in row/column coordinates.
  */
-interface Range {
+interface Range
+{
     start: Point;
     end: Point;
 
@@ -99,7 +105,8 @@ interface Range {
  * to represent cursors, folds, snippet targets, misspelled words, any anything else that needs to track a
  * logical location in the buffer over time.
  */
-interface Marker {
+interface Marker
+{
     /**
      * Destroys the marker, causing it to emit the 'destroyed' event. Once destroyed, a marker cannot be
      * restored by undo/redo operations.
@@ -112,11 +119,13 @@ interface Marker {
     getScreenRange(): Range;
 }
 
-interface Decoration {
+interface Decoration
+{
     destroy(): void;
 }
 
-interface Cursor {
+interface Cursor
+{
     getScreenPosition(): Point;
     getBufferPosition(): Point;
 
@@ -128,24 +137,29 @@ interface Cursor {
     onDidChangePosition(callback: (event: any) => void): Disposable;
 }
 
-interface ScopeDescriptor {
+interface ScopeDescriptor
+{
 
 }
 
-interface Checkpoint {
+interface Checkpoint
+{
 
 }
 
-interface TextEditorView {
+interface TextEditorView
+{
     getModel(): TextEditor;
 }
 
-interface InsertTextEvent {
+interface InsertTextEvent
+{
     cancel: Function;
     text: string;
 }
 
-interface Selection {
+interface Selection
+{
     getBufferRange(): Range;
 
     deleteSelectedText(): void;
@@ -159,7 +173,10 @@ interface Selection {
  *
  * A single TextBuffer can be belong to multiple editors.
  */
-interface TextEditor {
+interface TextEditor
+{
+    id: number;
+
     mini: boolean;
 
     isDestroyed(): boolean;
@@ -250,6 +267,13 @@ interface TextEditor {
      * @returns {Disposable} A disposable on which 'dispose' can be called to unsubscribe.
      */
     onDidStopChanging(callback: () => void): Disposable;
+    
+    /**
+     * Invoke the given callback when the underlying buffer's path changes.
+     *
+     * @returns {Disposable} A disposable on which 'dispose' can be called to unsubscribe.
+     */
+    onDidChangePath(callback: () => void): Disposable;
 
     onWillInsertText(callback: (insertEvent: InsertTextEvent) => void): Disposable;
 }
@@ -259,7 +283,8 @@ interface TextEditor {
  *
  * The {TextEditorView} manages the {TextEditor}, which manages the file buffers.
  */
-interface TextEditorView {
+interface TextEditorView
+{
     /**
      * Returns the underlying Editor that the view is based on.
      */
@@ -269,7 +294,8 @@ interface TextEditorView {
 /**
  * Represents a subscription to an event.
  */
-interface Subscription {
+interface Subscription
+{
     /**
      * Unregisters the current subscription.
      */
@@ -279,7 +305,8 @@ interface Subscription {
 /**
  * A handle to a resource that can be disposed.
  */
-interface Disposable {
+interface Disposable
+{
     /**
      * Perform the disposal action, indicating that the resource associated with this disposable
      * is no longer needed.
@@ -287,7 +314,8 @@ interface Disposable {
     dispose(): void;
 }
 
-interface StatusBar {
+interface StatusBar
+{
     prependLeft(view: HTMLElement);
     appendLeft(view: HTMLElement);
 }
@@ -295,7 +323,8 @@ interface StatusBar {
 /**
  * Represents the state of the user interface for the entire Atom window.
  */
-interface Workspace {
+interface Workspace
+{
     /**
      * Invoke the given callback with all current and future text editors in the workspace.
      *
@@ -314,7 +343,8 @@ interface Workspace {
  *
  * Access to {WorkspaceView} can be made via {AtomGlobal#workspaceView}.
  */
-interface WorkspaceView {
+interface WorkspaceView
+{
     /*
      * Registers a function to be called for every current and future {EditorView} in the workspace.
      *
@@ -329,7 +359,8 @@ interface WorkspaceView {
 /**
  * Represents an Atom package.
  */
-interface Package {
+interface Package
+{
     /**
      * The path to the location where the package has been installed.
      */
@@ -338,14 +369,16 @@ interface Package {
     mainModule: any;
 }
 
-interface Continuation<T> {
+interface Continuation<T>
+{
     then(callback: (value: T) => void): void;
 }
 
 /**
  * Package manager for coordinating the lifecycle of Atom packages.
  */
-interface PackageManager {
+interface PackageManager
+{
     /**
      * Gets the loaded {Package} with the given name.
      *
@@ -363,7 +396,8 @@ interface PackageManager {
 /**
  * ViewRegistry handles the association between model and view types in Atom.
  */
-interface ViewRegistry {
+interface ViewRegistry
+{
     addViewProvider(providerSpec: { modelConstructor: Function; viewConstructor?: Function; createView?: Function }): Disposable;
 
     getView(object: any): HTMLElement;
@@ -372,13 +406,15 @@ interface ViewRegistry {
 /**
  * Used to access all of Atom's configuration details.
  */
-interface Config {
+interface Config
+{
     get(scopeDescriptor?: ScopeDescriptor, keyPath?: string): any;
 
     set(scopeDescriptor?: ScopeDescriptor, keyPath?: string, value?: any);
 }
 
-interface CommandRegistry {
+interface CommandRegistry
+{
     add(target: string, commandName: string, callback: (event: Event) => void): Disposable;
 
     dispatch(target: EventTarget, commandName: string): boolean;
@@ -389,7 +425,8 @@ interface CommandRegistry {
  *
  * An instance of {AtomGlobal} is always available via the 'atom' global property.
  */
-interface AtomGlobal {
+interface AtomGlobal
+{
     /**
      * Gets the {Workspace} that represents the state of the user interface for the entire Atom window.
      */

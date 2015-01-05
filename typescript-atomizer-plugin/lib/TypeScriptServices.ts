@@ -1,4 +1,4 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 
 /**
  * Provides utilities for accessing TypeScript services.

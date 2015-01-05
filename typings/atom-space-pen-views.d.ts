@@ -1,13 +1,10 @@
 /// <reference path="./atom.d.ts" />
+/// <reference path="./space-pen/space-pen.d.ts" />
 
-declare module "atom-space-pen-views" {
-    class View {
-        addClass(cssClass: string): void;
-        isVisible(): boolean;
-        attach(): void;
-    }
-
-    export class SelectListView<T> extends View {
+declare module "atom-space-pen-views"
+{
+    export class SelectListView<T> extends View
+    {
         filterEditorView: TextEditorView;
         list: HTMLElement;
 
@@ -16,7 +13,7 @@ declare module "atom-space-pen-views" {
 
         setItems(items: Array<T>);
 
-        viewForItem(item: T): HTMLElement;
+        viewForItem(item: T): JQuery;
         confirmed(item: T): void;
 
         selectPreviousItemView(): void;

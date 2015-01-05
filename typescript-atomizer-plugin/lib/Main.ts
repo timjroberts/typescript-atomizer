@@ -1,8 +1,9 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/atom.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.async.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/atom.d.ts" />
+/// <reference path="../../typings/rx/rx.d.ts" />
+/// <reference path="../../typings/rx/rx.async.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 
+import ObservableFactory = require("./core/ObservableFactory");
 import TypeScriptServices = require("./TypeScriptServices");
 import Rx = require("rx");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
@@ -10,20 +11,16 @@ import TypeScriptWorkspace = require("./TypeScriptWorkspace");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
+import CompositeDisposable = require("./core/CompositeDisposable");
 
 /**
  * Provides the entry point for the TypeScript Atomizer plugin.
  */
 module TypeScriptAtomizerPlugin
 {
-    var disposableViewProviders: Array<Disposable>;
-    var documentRegistry: TypeScriptDocumentRegistry;
-    var typescriptWorkspace: TypeScriptWorkspace;
-
     var onTypeScriptTextEditorOpened: Rx.Subject<TypeScriptTextEditor>;
     var onTextEditorChanged: Rx.Subject<TextEditor>;
-    var textEditorChangedSubscription: Rx.IDisposable;
-    var openedTypeScriptTextEditorsSubscription: Rx.IDisposable;
+    var disposables: CompositeDisposable;
 
     /**
      * Called by Atom to activate the plugin.
@@ -32,16 +29,18 @@ module TypeScriptAtomizerPlugin
     {
         TypeScriptServices.initialize();
 
-        disposableViewProviders = registerViewProviders();
+        disposables = new CompositeDisposable();
 
         onTypeScriptTextEditorOpened = new Rx.Subject<TypeScriptTextEditor>();
         onTextEditorChanged = new Rx.Subject<TextEditor>();
 
-        documentRegistry = new TypeScriptDocumentRegistry(getPackageRootPath());
-        typescriptWorkspace = new TypeScriptWorkspace(atom, onTypeScriptTextEditorOpened, onTextEditorChanged);
+        var documentRegistry = new TypeScriptDocumentRegistry(getPackageRootPath());
 
-        openedTypeScriptTextEditorsSubscription =
-            createTextEditorOpenedObservable(atom.workspace)
+        disposables.push(registerViewProviders());
+        disposables.push(documentRegistry);
+        disposables.push(new TypeScriptWorkspace(atom, onTypeScriptTextEditorOpened, onTextEditorChanged));
+
+        disposables.push(ObservableFactory.createDisposableObservable<TextEditor>((h) => atom.workspace.observeTextEditors(h))
                 .filter((editor: TextEditor, idx: number, obs: Rx.Observable<TextEditor>): boolean =>
                 {
                     return !editor.mini && editor.getGrammar().name === "TypeScript";
@@ -53,14 +52,13 @@ module TypeScriptAtomizerPlugin
                 .subscribe((tsTextEditor: TypeScriptTextEditor) =>
                 {
                     onTypeScriptTextEditorOpened.onNext(tsTextEditor);
-                });
+                }));
 
-        textEditorChangedSubscription =
-            createActivePaneItemChangedObservable(atom.workspace)
+        disposables.push(ObservableFactory.createDisposableObservable<TextEditor>((h) => atom.workspace.onDidChangeActivePaneItem(h))
                 .subscribe((item: Object) =>
                 {
                     onTextEditorChanged.onNext(atom.workspace.getActiveTextEditor());
-                });
+                }));
     }
 
     /**
@@ -69,17 +67,9 @@ module TypeScriptAtomizerPlugin
     export function deactivate(): void
     {
         onTypeScriptTextEditorOpened.onCompleted();
-        openedTypeScriptTextEditorsSubscription.dispose();
         onTextEditorChanged.onCompleted();
-        textEditorChangedSubscription.dispose();
 
-        disposableViewProviders.forEach((disposable: Disposable) => { disposable.dispose(); });
-
-        typescriptWorkspace.dispose();
-
-        documentRegistry = null;
-        typescriptWorkspace = null;
-        disposableViewProviders = null;
+        disposables.dispose();
     }
 
     /**
@@ -89,16 +79,17 @@ module TypeScriptAtomizerPlugin
      * @returns {Array<Disposable>} An array of disposable objects that can be used to remove the view
      * providers from the Atom view registry.
      */
-    function registerViewProviders(): Array<Disposable>
+    function registerViewProviders(): CompositeDisposable
     {
-        var statusBarViewProvider =
-            atom.views.addViewProvider(
-                {
-                    modelConstructor: TypeScriptDiagnosticStatusBar,
-                    createView: () => { return new TypeScriptDiagnosticStatusBarView() }
-                });
+        var disposable = new CompositeDisposable();
 
-        return [ statusBarViewProvider ];
+        disposable.push(atom.views.addViewProvider(
+            {
+                modelConstructor: TypeScriptDiagnosticStatusBar,
+                createView: () => { return new TypeScriptDiagnosticStatusBarView() }
+            }));
+
+        return disposable;
     }
 
     /**
@@ -111,50 +102,6 @@ module TypeScriptAtomizerPlugin
         var packageConfig = require("../package.json");
 
         return atom.packages.getLoadedPackage(packageConfig.name).path
-    }
-
-    /**
-     * Returns an observable stream of opened text editors by subscribing to the global Atom Workspace.
-     *
-     * @param {Workspace} workspace - The Atom workspace.
-     * @returns {Rx.Observable<TextEditor>} An observable stream of opened text editors.
-     */
-    function createTextEditorOpenedObservable(workspace: Workspace): Rx.Observable<TextEditor>
-    {
-        var addHandler =
-            (h) => { return workspace.observeTextEditors(h); };
-
-        var removeHandler =
-            (...args) =>
-            {
-                var subscription = <Disposable>args[1];
-
-                subscription.dispose();
-            };
-
-        return Rx.Observable.fromEventPattern<TextEditor>(addHandler, removeHandler);
-    }
-
-    /**
-     * Returns an observable stream of acivate pane items in the global Atom Workspace.
-     *
-     * @param {Workspace} workspace - The Atom workspace.
-     * @returns {Rx.Observable<Object>} An observable stream of active pane items.
-     */
-    function createActivePaneItemChangedObservable(workspace: Workspace): Rx.Observable<Object>
-    {
-        var addHandler =
-        (h) => { return workspace.onDidChangeActivePaneItem(h); };
-
-        var removeHandler =
-            (...args) =>
-            {
-                var subscription = <Disposable>args[1];
-
-                subscription.dispose();
-            };
-
-        return Rx.Observable.fromEventPattern<Object>(addHandler, removeHandler);
     }
 }
 

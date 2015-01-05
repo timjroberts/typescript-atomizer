@@ -45,7 +45,8 @@ module.exports = function(grunt)
                         "lib/TypeScript/**",
                         "lib/Bootstrap/**",
                         "spec/**/*.js",
-                        "package.json"
+                        "package.json",
+                        "README.md"
                     ].concat(getPluginPackagableNodeModuleGlobs()),
 
                 typescript:

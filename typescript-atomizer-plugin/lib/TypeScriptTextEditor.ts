@@ -1,10 +1,12 @@
-/// <reference path="../node_modules/typescript-atomizer-typings/atom.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/rx/rx.d.ts" />
-/// <reference path="../node_modules/typescript-atomizer-typings/TypeScriptServices.d.ts" />
+/// <reference path="../../typings/atom.d.ts" />
+/// <reference path="../../typings/rx/rx.d.ts" />
+/// <reference path="../../typings/TypeScriptServices.d.ts" />
 
+import ObservableFactory = require("./core/ObservableFactory");
 import Rx = require("rx");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
 import TypeScriptDocument = require("./TypeScriptDocument");
+import CompositeDisposable = require("./core/CompositeDisposable");
 
 /**
  * Represents all the essential state for a text buffer opened upon a TypeScript
@@ -22,6 +24,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     private _onContentsChanging: Rx.Subject<TypeScriptTextEditor>;
     private _onContentsChanged: Rx.Subject<TypeScriptTextEditor>;
     private _onCursorPositionChanged: Rx.Subject<Point>;
+    private _onBeforePathChanged: Rx.Subject<TypeScriptTextEditor>;
 
     /**
      * Initializes a new {TypeScriptTextEditor}.
@@ -42,53 +45,65 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
         this._onContentsChanging = new Rx.Subject<TypeScriptTextEditor>();
         this._onContentsChanged = new Rx.Subject<TypeScriptTextEditor>();
         this._onCursorPositionChanged = new Rx.Subject<Point>();
+        this._onBeforePathChanged = new Rx.Subject<TypeScriptTextEditor>();
 
-        var onContentsChanging =
-            TypeScriptTextEditor.createOnContentsChangingObservable(this._textEditor)
-                .subscribe(() =>
-                {
-                    this._onContentsChanging.onNext(this);
-                });
+        var subscriptions = new CompositeDisposable();
 
-        var onContentsChangedSubscription =
-            TypeScriptTextEditor.createOnContentsChangedObservable(this._textEditor)
-                .subscribe(() =>
-                {
-                    this._onContentsChanged.onNext(this);
-                });
+        subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidChange(h))
+            .subscribe(() =>
+            {
+                this._onContentsChanging.onNext(this);
+            }));
 
-        var onCursorChangedSubscription =
-            TypeScriptTextEditor.createOnCursorChangedPositionObservable(this._textEditor)
-                .select((_, idx: number, obs: Rx.Observable<void>) =>
-                {
-                    return this._textEditor.getLastCursor().getScreenPosition();
-                })
-                .subscribe((point: Point) =>
-                {
-                    this._onCursorPositionChanged.onNext(point);
-                });
+        subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidStopChanging(h))
+            .subscribe(() =>
+            {
+                this._onContentsChanged.onNext(this);
+            }));
 
-        var onDestroySubscription =
-            TypeScriptTextEditor.createOnDestroyObservable(this._textEditor)
-                .subscribe(() =>
-                {
-                    this._onClosed.onNext(this);
+        subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.getLastCursor().onDidChangePosition(h))
+            .select((_, idx: number, obs: Rx.Observable<void>) =>
+            {
+                return this._textEditor.getLastCursor().getScreenPosition();
+            })
+            .subscribe((point: Point) =>
+            {
+                this._onCursorPositionChanged.onNext(point);
+            }));
 
-                    this._onContentsChanging.onCompleted();
-                    this._onContentsChanged.onCompleted();
-                    this._onCursorPositionChanged.onCompleted();
-                    this._onClosed.onCompleted();
+        subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidChangePath(h))
+            .subscribe(() =>
+            {
+                this.onPathChanged(this._textEditor.getPath());
+                this._onBeforePathChanged.onNext(this);
+            }));
 
-                    onContentsChanging.dispose();
-                    onContentsChangedSubscription.dispose();
-                    onCursorChangedSubscription.dispose();
-                    onDestroySubscription.dispose();
+        subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidDestroy(h))
+            .subscribe(() =>
+            {
+                this._onClosed.onNext(this);
 
-                    this._languageService.dispose();
-                });
+                this._onContentsChanging.onCompleted();
+                this._onContentsChanged.onCompleted();
+                this._onCursorPositionChanged.onCompleted();
+                this._onBeforePathChanged.onCompleted();
+                this._onClosed.onCompleted();
+
+                subscriptions.dispose();
+
+                this._languageService.dispose();
+            }));
 
         this._documentRegistry.openBufferedDocumentForEditor(this);
         this._languageService = ts.createLanguageService(this, this._documentRegistry);
+    }
+
+    /**
+     * Get the unique identifier of tje current TypeScript text editor.
+     */
+    public get id(): number
+    {
+        return this._textEditor.id;
     }
 
     /**
@@ -152,11 +167,21 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     }
 
     /**
+     * Gets an observable that when subscribed to will indicate when the underlying path has changed.
+     */
+    public get onBeforePathChanged(): Rx.Observable<TypeScriptTextEditor>
+    {
+        return this._onBeforePathChanged;
+    }
+
+    /**
      * Retrieves the current TypeScript diagnostic messages.
      */
     public getLanguageDiagnostics(): Array<ts.Diagnostic>
     {
-        var diagnostics = this._languageService.getSemanticDiagnostics(this._normalizedPath);
+        var diagnostics =
+            this._languageService.getSyntacticDiagnostics(this._normalizedPath)
+                                 .concat(this._languageService.getSemanticDiagnostics(this._normalizedPath));
 
         return diagnostics ? diagnostics : [ ];
     }
@@ -283,95 +308,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     }
 
     /**
-     * Returns an observable stream of text editor change by subscribing to the underlying
-     * Atom Text Editor.
-     *
-     * @param {TextEditor} textEditor - The Atom TextEditor.
-     * @returns {Rx.Observable<void>} Returns an observable stream of text editor changes.
+     * called when the path of the underlying text buffer changes.
      */
-    private static createOnContentsChangingObservable(textEditor: TextEditor): Rx.Observable<void>
+    private onPathChanged(newPath: string): void
     {
-        var addHandler =
-            (h) => { return textEditor.onDidChange(h); };
+        var normalizedNewPath = TypeScript.switchToForwardSlashes(newPath);
 
-        var removeHandler =
-            (...args) =>
-            {
-                var disposable = <Disposable>args[1];
-
-                disposable.dispose();
-            };
-
-        return Rx.Observable.fromEventPattern<void>(addHandler, removeHandler);
-    }
-
-    /**
-     * Returns an observable stream of text editor changes by subscribing to the underlying
-     * Atom Text Editor.
-     *
-     * @param {TextEditor} textEditor - The Atom TextEditor.
-     * @returns {Rx.Observable<void>} Returns an observable stream of text editor changes.
-     */
-    private static createOnContentsChangedObservable(textEditor: TextEditor): Rx.Observable<void>
-    {
-        var addHandler =
-            (h) => { return textEditor.onDidStopChanging(h); };
-
-        var removeHandler =
-            (...args) =>
-            {
-                var disposable = <Disposable>args[1];
-
-                disposable.dispose();
-            };
-
-        return Rx.Observable.fromEventPattern<void>(addHandler, removeHandler);
-    }
-
-    /**
-     * Returns an observable stream of text editor destroyed events by subscribing to the underlying
-     * Atom Text Editor.
-     *
-     * @param {TextEditor} textEditor - The Atom TextEditor.
-     * @returns {Rx.Observable<void>} Returns an observable stream of text editor destroyed events.
-     */
-    private static createOnDestroyObservable(textEditor: TextEditor): Rx.Observable<void>
-    {
-        var addHandler =
-            (h) => { return textEditor.onDidDestroy(h); };
-
-        var removeHandler =
-            (...args) =>
-            {
-                var disposable = <Disposable>args[1];
-
-                disposable.dispose();
-            };
-
-        return Rx.Observable.fromEventPattern<void>(addHandler, removeHandler);
-    }
-
-    /**
-     * Returns an observable stream of text editor cursor changed events by subscribing to the last cursor
-     * added to the Text Editor.
-     *
-     * @param {TextEditor} textEditor - The Atom TextEditor.
-     * @returns {Rx.Observable<void>} Returns an observable stream of text editor cursor changed events.
-     */
-    private static createOnCursorChangedPositionObservable(textEditor: TextEditor): Rx.Observable<void>
-    {
-        var addHandler =
-            (h) => { return textEditor.getLastCursor().onDidChangePosition(h); };
-
-        var removeHandler =
-            (...args) =>
-            {
-                var disposable = <Disposable>args[1];
-
-                disposable.dispose();
-            };
-
-        return Rx.Observable.fromEventPattern<void>(addHandler, removeHandler);
+        this._documentRegistry.updateDocumentPath(this, normalizedNewPath);
+        this._normalizedPath = normalizedNewPath;
     }
 }
 
