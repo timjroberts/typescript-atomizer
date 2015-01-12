@@ -1,6 +1,6 @@
 {
     "name": "typescript-atomizer",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "An Atom plugin that provides TypeScript language support and tooling.",
     "repository":
     {
@@ -32,6 +32,7 @@
         "grunt-jasmine-node": "*",
         "grunt-contrib-copy": "*",
         "grunt-contrib-clean": "*",
+        "grunt-contrib-compress": "*",
         "grunt-typescript": "*"
     }
 }

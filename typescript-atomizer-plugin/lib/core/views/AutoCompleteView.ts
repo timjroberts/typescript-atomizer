@@ -181,7 +181,7 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
             widestSpan = Math.max(widestSpan, span.offsetWidth);
         });
 
-        (<any>this.list).width(widestSpan + 22);
+        (<any>this.list).width(widestSpan + 25);
         this.width((<any>this.list).outerWidth());
 
         this.storeFocusedElement();

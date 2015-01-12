@@ -44,12 +44,19 @@ module.exports = function(grunt)
                             {
                                 src: "<%=deployableGruntFiles %>",
                                 options: { task: "deploy" }
+                            },
+
+                        package:
+                            {
+                                src: "<%=deployableGruntFiles %>",
+                                options: { task: "package" }
                             }
                     }
             }
         );
 
-        grunt.registerTask("build",  [ "run_grunt:build" ]);
-        grunt.registerTask("test",   [ "run_grunt:test" ]);
-        grunt.registerTask("deploy", [ "run_grunt:deploy" ]);
+        grunt.registerTask("build",   [ "run_grunt:build" ]);
+        grunt.registerTask("test",    [ "run_grunt:test" ]);
+        grunt.registerTask("deploy",  [ "run_grunt:deploy" ]);
+        grunt.registerTask("package", [ "run_grunt:build", "run_grunt:package" ]);
     };
