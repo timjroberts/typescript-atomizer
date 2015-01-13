@@ -1,5 +1,5 @@
-/// <reference path="../../../../typings/atom-space-pen-views.d.ts" />
-/// <reference path="../../../../typings/space-pen/space-pen.d.ts" />
+/// <reference path="../typings/atom-space-pen-views.d.ts" />
+/// <reference path="../typings/space-pen/space-pen.d.ts" />
 
 import SpacePen = require("space-pen");
 import AtomSpacePenViews = require("atom-space-pen-views");

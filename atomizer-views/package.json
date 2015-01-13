@@ -1,0 +1,21 @@
+{
+    "name": "atomizer-views",
+    "version": "0.0.0",
+    "description": "Provides a base view framework for Atomizer implementations.",
+    "author":
+    {
+        "name": "Tim Roberts",
+        "url": "http://http://about.me/timjroberts"
+    },
+    "dependencies":
+    {
+        "space-pen": "*",
+        "atom-space-pen-views": "*"
+    },
+    "devDependencies":
+    {
+        "jasmine": "*",
+        "grunt-jasmine-node": "*",
+        "grunt-typescript": "*"
+    }
+}

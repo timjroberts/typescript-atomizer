@@ -2,8 +2,9 @@
 /// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="../../typings/rx/rx.async.d.ts" />
 /// <reference path="../../typings/TypeScriptServices.d.ts" />
+/// <reference path="../../atomizer-core/atomizer-core.d.ts" />
 
-import ObservableFactory = require("./core/ObservableFactory");
+import ObservableFactory = require("atomizer-core/ObservableFactory");
 import TypeScriptServices = require("./TypeScriptServices");
 import Rx = require("rx");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
@@ -11,7 +12,7 @@ import TypeScriptWorkspace = require("./TypeScriptWorkspace");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
-import CompositeDisposable = require("./core/CompositeDisposable");
+import CompositeDisposable = require("atomizer-core/CompositeDisposable");
 
 /**
  * Provides the entry point for the TypeScript Atomizer plugin.

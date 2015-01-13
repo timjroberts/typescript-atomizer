@@ -1,6 +1,8 @@
 {
     "links":
     {
+        "atomizer-core": "atomizer-core",
+        "atomizer-views": "atomizer-views",
         "typescript-atomizer": "typescript-atomizer-plugin"
     }
 }

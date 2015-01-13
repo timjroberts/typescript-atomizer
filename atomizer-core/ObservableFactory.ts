@@ -1,6 +1,6 @@
-/// <reference path="../../../typings/atom.d.ts" />
-/// <reference path="../../../typings/rx/rx.d.ts" />
-/// <reference path="../../../typings/rx/rx.async.d.ts" />
+/// <reference path="../typings/atom.d.ts" />
+/// <reference path="../typings/rx/rx.d.ts" />
+/// <reference path="../typings/rx/rx.async.d.ts" />
 
 import Rx = require("rx");
 

@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/atom.d.ts" />
+/// <reference path="../typings/atom.d.ts" />
 
 import DisposableArray = require("./DisposableArray");
 

@@ -347,32 +347,17 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry, Disposable
 
                     if (moduleName)
                     {
-                        var searchPath = basePath;
+                        if (!TypeScriptDocumentRegistry.isExternalModuleNameRelative(moduleName))
+                            return;
 
-                        while (true)
-                        {
-                            var searchName = ts.normalizePath(ts.combinePaths(searchPath, moduleName));
-                            var searchNameSource = searchName + ".ts";
-                            var searchNameHeader = searchName + ".d.ts";
+                        var searchName = ts.normalizePath(ts.combinePaths(basePath, moduleName));
+                        var searchNameSource = searchName + ".ts";
+                        var searchNameHeader = searchName + ".d.ts";
 
-                            if (fs.existsSync(searchNameSource))
-                            {
-                                processModuleSourceFile(searchNameSource);
-                                break;
-                            }
-                            else if (fs.existsSync(searchNameHeader))
-                            {
-                                processModuleSourceFile(searchNameHeader);
-                                break;
-                            }
-
-                            var parentPath = ts.getDirectoryPath(searchPath);
-
-                            if (parentPath === searchPath)
-                                break;
-
-                            searchPath = parentPath;
-                        }
+                        if (fs.existsSync(searchNameSource))
+                            processModuleSourceFile(searchNameSource);
+                        else if (fs.existsSync(searchNameHeader))
+                            processModuleSourceFile(searchNameHeader);
                     }
                 }
             });
@@ -388,6 +373,17 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry, Disposable
     {
         if (!doc)
             throw new Error("File '" + path + "' is unknown to the TypeScript document registry.");
+    }
+
+    /**
+     * Determines if a module name is relative.
+     *
+     * @param moduleName - The module name to check.
+     * @returns true if the module is relative; otherwise false.
+     */
+    private static isExternalModuleNameRelative(moduleName: string): boolean
+    {
+        return moduleName.substr(0, 2) === "./" || moduleName.substr(0, 3) === "../" || moduleName.substr(0, 2) === ".\\" || moduleName.substr(0, 3) === "..\\";
     }
 }
 

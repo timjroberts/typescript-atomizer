@@ -1,12 +1,13 @@
 /// <reference path="../../typings/atom.d.ts" />
 /// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="../../typings/TypeScriptServices.d.ts" />
+/// <reference path="../../atomizer-core/atomizer-core.d.ts" />
 
-import ObservableFactory = require("./core/ObservableFactory");
+import ObservableFactory = require("atomizer-core/ObservableFactory");
 import Rx = require("rx");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
 import TypeScriptDocument = require("./TypeScriptDocument");
-import CompositeDisposable = require("./core/CompositeDisposable");
+import CompositeDisposable = require("atomizer-core/CompositeDisposable");
 
 /**
  * Represents all the essential state for a text buffer opened upon a TypeScript

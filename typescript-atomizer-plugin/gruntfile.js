@@ -1,3 +1,4 @@
+var fs = require("fs");
 var package = require("./package.json");
 
 function getAtomRootPackagesPath() {
@@ -8,11 +9,42 @@ function getAtomRootPackagesPath() {
     throw new Error("Unsupported platform...");
 }
 
+function getGlobsForSymLinkedPackage(rootPath, realPath) {
+    var globs = [];
+
+    globs.push(rootPath + "/**/*.js");
+    globs.push(rootPath + "/package.json");
+    globs.push("!" + rootPath + "/node_modules/**/*");
+    globs.push("!" + rootPath + "/gruntfile.js");
+
+    var depPackage = require(realPath + "/package.json");
+
+    for (var dependencyName in depPackage.dependencies) {
+        path = rootPath + "/node_modules/" + dependencyName;
+
+        if (fs.lstatSync(path).isSymbolicLink()) {
+            globs = globs.concat(getGlobsForSymLinkedPackage(path, fs.realpathSync(path)));
+        }
+        else {
+            globs.push(path + "/**");
+        }
+    }
+
+    return globs;
+}
+
 function getPluginPackagableNodeModuleGlobs() {
     var globs = [];
 
     for (var dependencyName in package.dependencies) {
-        globs.push("node_modules/" + dependencyName + "/**");
+        var path = "node_modules/" + dependencyName;
+
+        if (fs.lstatSync(path).isSymbolicLink()) {
+            globs = globs.concat(getGlobsForSymLinkedPackage(path, fs.realpathSync(path)));
+        }
+        else {
+            globs.push(path + "/**");
+        }
     }
 
     return globs;
@@ -47,7 +79,7 @@ module.exports = function(grunt)
                         "lib/Bootstrap/**",
                         "spec/**/*.js",
                         "package.json",
-                        "README.md"
+                        "README.md",
                     ].concat(getPluginPackagableNodeModuleGlobs()),
 
                 typescript:

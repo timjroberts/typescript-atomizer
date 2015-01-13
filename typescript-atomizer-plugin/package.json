@@ -24,7 +24,8 @@
     {
         "rx": "*",
         "space-pen": "*",
-        "atom-space-pen-views": "*"
+        "atomizer-core": "*",
+        "atomizer-views": "*"
     },
     "devDependencies":
     {

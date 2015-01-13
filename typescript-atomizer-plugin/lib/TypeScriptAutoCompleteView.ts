@@ -1,8 +1,7 @@
 /// <reference path="../../typings/TypeScriptServices.d.ts" />
-/// <reference path="../../typings/space-pen/space-pen.d.ts" />
+/// <reference path="../../atomizer-views/atomizer-views.d.ts" />
 
-import SpacePen = require("space-pen");
-import AutoCompleteView = require("./core/views/AutoCompleteView");
+import AutoCompleteView = require("atomizer-views/AutoCompleteView");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 
 /**
@@ -70,7 +69,7 @@ class TypeScriptAutoCompleteView extends AutoCompleteView<ts.CompletionEntry>
 
         if (kind === "var")
             return "localvar";
-            
+
         if (kind === "local var")
             return "localvar-protected";
 

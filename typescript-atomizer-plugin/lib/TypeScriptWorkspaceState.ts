@@ -1,10 +1,11 @@
 /// <reference path="../../typings/TypeScriptServices.d.ts" />
+/// <reference path="../../atomizer-core/atomizer-core.d.ts" />
 
-import ArrayUtils = require("./core/ArrayUtils");
+import ArrayUtils = require("atomizer-core/ArrayUtils");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptAutoCompleteView = require("./TypeScriptAutoCompleteView");
 import TypeScriptContextView = require("./TypeScriptContextView");
-import DisposableArray = require("./core/DisposableArray");
+import DisposableArray = require("atomizer-core/DisposableArray");
 
 /**
  * A private class that represents the global state for an active TypeScript text editor that is

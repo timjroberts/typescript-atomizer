@@ -1,13 +1,14 @@
 /// <reference path="./core/NumberIndexDictionary.d.ts" />
 /// <reference path="../../typings/atom.d.ts" />
 /// <reference path="../../typings/TypeScriptServices.d.ts" />
+/// <reference path="../../atomizer-core/atomizer-core.d.ts" />
 
 import Rx = require("rx");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
 import TypeScriptWorkspaceState = require("./TypeScriptWorkspaceState");
-import CompositeDisposable = require("./core/CompositeDisposable");
+import CompositeDisposable = require("atomizer-core/CompositeDisposable");
 
 /**
  * Orchestrates the state of the user interface in regards to the open TypeScript text editors and any global
