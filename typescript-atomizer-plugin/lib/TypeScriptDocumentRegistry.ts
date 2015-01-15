@@ -51,7 +51,10 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry, Disposable
     {
         try
         {
-            this.getOrCreateBufferedTypeScriptDocument(tsTextEditor.path, tsTextEditor.textBuffer).addBufferReference();
+            var bufferedDocument: BufferedTypeScriptDocument = this.getOrCreateBufferedTypeScriptDocument(tsTextEditor.path, tsTextEditor.textBuffer);
+
+            bufferedDocument.addBufferReference();
+            bufferedDocument.addReference();
         }
         finally
         {
@@ -209,6 +212,8 @@ class TypeScriptDocumentRegistry implements ts.DocumentRegistry, Disposable
             // TypeScriptDocument object
             this._documents[path] = new TypeScriptDocument(bufferedTypeScriptDocument);
         }
+
+        this.releaseDocument(path, null);
     }
 
     /**

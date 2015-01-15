@@ -5,24 +5,21 @@ declare module "atom-space-pen-views"
 {
     export class SelectListView<T> extends View
     {
-        filterEditorView: TextEditorView;
-        list: HTMLElement;
-
-        width(width: number);
-        cancel(): void;
+        protected filterEditorView: TextEditorView;
+        protected list: HTMLElement;
 
         setItems(items: Array<T>);
 
-        viewForItem(item: T): JQuery;
-        confirmed(item: T): void;
-
-        selectPreviousItemView(): void;
-        selectNextItemView(): void;
-
-        selectItemView(item: any): void;
-        getSelectedItem(): T;
-
-        storeFocusedElement(): void;
-        focusFilterEditor(): void;
+        protected width(width: number);
+        protected cancel(): void;
+        protected confirmSelection(): void;
+        protected selectNextItemView(): void;
+        protected selectPreviousItemView(): void;
+        protected viewForItem(item: T): JQuery;
+        protected confirmed(item: T): void;
+        protected selectItemView(item: any): void;
+        protected getSelectedItem(): T;
+        protected storeFocusedElement(): void;
+        protected focusFilterEditor(): void;
     }
 }

@@ -134,12 +134,14 @@ interface Cursor
 
     getMarker(): Marker;
 
+    getScopeDescriptor(): ScopeDescriptor;
+
     onDidChangePosition(callback: (event: any) => void): Disposable;
 }
 
 interface ScopeDescriptor
 {
-
+    getScopesArray(): Array<string>;
 }
 
 interface Checkpoint
@@ -267,7 +269,7 @@ interface TextEditor
      * @returns {Disposable} A disposable on which 'dispose' can be called to unsubscribe.
      */
     onDidStopChanging(callback: () => void): Disposable;
-    
+
     /**
      * Invoke the given callback when the underlying buffer's path changes.
      *
@@ -420,6 +422,16 @@ interface CommandRegistry
     dispatch(target: EventTarget, commandName: string): boolean;
 }
 
+interface BindingDictionary
+{
+    [key: string]: string;
+}
+
+interface KeymapManager
+{
+    add(source: string, bindings: any): Disposable;
+}
+
 /**
  * Atom global for dealing with packages, themes, menus, and the window.
  *
@@ -453,6 +465,8 @@ interface AtomGlobal
      * Gets the global command registry.
      */
     commands: CommandRegistry;
+
+    keymaps: KeymapManager;
 }
 
 declare var atom: AtomGlobal;

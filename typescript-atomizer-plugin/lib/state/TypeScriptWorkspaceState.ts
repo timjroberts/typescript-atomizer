@@ -1,11 +1,13 @@
-/// <reference path="../../typings/TypeScriptServices.d.ts" />
-/// <reference path="../../atomizer-core/atomizer-core.d.ts" />
+/// <reference path="../../../typings/TypeScriptServices.d.ts" />
+/// <reference path="../../../atomizer-core/atomizer-core.d.ts" />
 
 import ArrayUtils = require("atomizer-core/ArrayUtils");
-import TypeScriptTextEditor = require("./TypeScriptTextEditor");
-import TypeScriptAutoCompleteView = require("./TypeScriptAutoCompleteView");
-import TypeScriptContextView = require("./TypeScriptContextView");
+import TypeScriptTextEditor = require("../TypeScriptTextEditor");
+import TypeScriptAutoCompleteView = require("../TypeScriptAutoCompleteView");
+import TypeScriptContextView = require("../TypeScriptContextView");
 import DisposableArray = require("atomizer-core/DisposableArray");
+import SelectionFixes = require("atomizer-views/SelectionFixes");
+import TypeScriptAutoCompleteState = require("./TypeScriptAutoCompleteState");
 
 /**
  * A private class that represents the global state for an active TypeScript text editor that is
@@ -14,7 +16,7 @@ import DisposableArray = require("atomizer-core/DisposableArray");
 class TypeScriptWorkspaceState implements Disposable
 {
     private _typescriptTextEditor: TypeScriptTextEditor;
-    private _autoCompleteView: TypeScriptAutoCompleteView;
+    private _autoCompleteState: TypeScriptAutoCompleteState;
     private _contextView: TypeScriptContextView;
     private _inError: boolean;
     private _defaultMessage: string;
@@ -22,6 +24,8 @@ class TypeScriptWorkspaceState implements Disposable
     private _diagnostics: Array<ts.Diagnostic>;
     private _diagnosticMarkers: DisposableArray<Marker>;
     private _contentsChanging: boolean;
+    private _currentCursorPosition: Point;
+    private _ignoreNextChange: boolean;
 
     /**
      * Initializes a new state object for a given TypeScript text editor.
@@ -31,7 +35,7 @@ class TypeScriptWorkspaceState implements Disposable
     constructor(typescriptTextEditor: TypeScriptTextEditor)
     {
         this._typescriptTextEditor = typescriptTextEditor;
-        this._autoCompleteView = new TypeScriptAutoCompleteView(typescriptTextEditor);
+        this._autoCompleteState = new TypeScriptAutoCompleteState(typescriptTextEditor);
         this._contextView = new TypeScriptContextView(typescriptTextEditor);
 
         this._diagnostics = [ ];
@@ -40,6 +44,7 @@ class TypeScriptWorkspaceState implements Disposable
         this._inError = false;
         this._currentMessage = null;
         this._defaultMessage = "";
+        this._ignoreNextChange = true;
     }
 
     /**
@@ -68,11 +73,6 @@ class TypeScriptWorkspaceState implements Disposable
     }
 
     /**
-     * Gets a flag indicating whether the auto-complete view is active.
-     */
-    public get autoCompleteInProgress(): boolean { return this._autoCompleteView.isVisible(); }
-
-    /**
      * Gets a flag indicating whether the TypeScript text editor is changing its buffer contents.
      */
     public get contentsChanging(): boolean
@@ -85,6 +85,26 @@ class TypeScriptWorkspaceState implements Disposable
     public set contentsChanging(value: boolean)
     {
         this._contentsChanging = value;
+    }
+
+    public get ignoreNextContentChange(): boolean { return this._ignoreNextChange; }
+    public set ignoreNextContentChange(value: boolean) { this._ignoreNextChange = value; }
+
+    /**
+     * Gets the auto-complete state.
+     */
+    public get autoCompleteState(): TypeScriptAutoCompleteState { return this._autoCompleteState; }
+
+    public get isInsideComment(): boolean
+    {
+        var scopes = this._typescriptTextEditor.textEditor.getLastCursor().getScopeDescriptor().getScopesArray();
+
+        var index = ArrayUtils.findIndex(scopes, (s: string) =>
+            {
+                return s.indexOf("comment") === 0;
+            });
+
+        return index >= 0;
     }
 
     /**
@@ -145,6 +165,12 @@ class TypeScriptWorkspaceState implements Disposable
      */
     public updateFromCursorPosition(cursorPosition: Point)
     {
+        if (this._currentCursorPosition && this._currentCursorPosition.row !== cursorPosition.row)
+        {
+            if (this._autoCompleteState.inProgress)
+                this._autoCompleteState.toggleView();
+        }
+
         var index: number = this._diagnosticMarkers.findIndex((m: Marker) => { return m.getScreenRange().containsPoint(cursorPosition); });
 
         if (index >= 0)
@@ -156,6 +182,8 @@ class TypeScriptWorkspaceState implements Disposable
         {
             this.message = null;
         }
+
+        this._currentCursorPosition = cursorPosition;
     }
 
     /**
@@ -163,7 +191,7 @@ class TypeScriptWorkspaceState implements Disposable
      */
     public toggleAutoComplete(): void
     {
-        this._autoCompleteView.toggle();
+        this._autoCompleteState.toggleView();
     }
 
     public toggleContext(): void

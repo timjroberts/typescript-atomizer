@@ -7,8 +7,10 @@ import Rx = require("rx");
 import TypeScriptTextEditor = require("./TypeScriptTextEditor");
 import TypeScriptDiagnosticStatusBar = require("./TypeScriptDiagnosticStatusBar");
 import TypeScriptDiagnosticStatusBarView = require("./TypeScriptDiagnosticStatusBarView");
-import TypeScriptWorkspaceState = require("./TypeScriptWorkspaceState");
+import TypeScriptWorkspaceState = require("./state/TypeScriptWorkspaceState");
 import CompositeDisposable = require("atomizer-core/CompositeDisposable");
+import SelectionFixes = require("atomizer-views/SelectionFixes");
+import TypeScriptAutoCompleteState = require("./state/TypeScriptAutoCompleteState");
 
 /**
  * Orchestrates the state of the user interface in regards to the open TypeScript text editors and any global
@@ -22,7 +24,7 @@ class TypeScriptWorkspace implements Disposable
     private _workspaceView: WorkspaceView;
     private _viewRegistry: ViewRegistry;
     private _statusBar: TypeScriptDiagnosticStatusBar;
-    private _commands: CompositeDisposable;
+    private _disposables: CompositeDisposable;
 
     /**
      * Initializes a new {TypeScriptWorkspace}.
@@ -44,14 +46,43 @@ class TypeScriptWorkspace implements Disposable
         onTypeScriptTextEditorOpened.subscribe((tsTextEditor: TypeScriptTextEditor) => this.onTypeScriptTextEditorOpened.call(this, tsTextEditor));
         onTextEditorChanged.subscribe((textEditor: TextEditor) => this.onTextEditorChanged.call(this, textEditor));
 
-        this._commands = new CompositeDisposable();
+        this._disposables = new CompositeDisposable();
 
-        this._commands.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript']",
-                                                    "typescript-atomizer-autocomplete:toggle",
-                                                    (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)));
-        this._commands.push(this._atom.commands.add("atom-text-editor[mini]",
-                                                    "typescript-atomizer-autocomplete:toggle",
-                                                    (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)));
+        this._disposables.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript']",
+                                                       "typescript-atomizer-autocomplete:toggle",
+                                                       (htmlEvent: Event) => this.onToggleAutoComplete.call(this, htmlEvent)));
+
+        this._disposables.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript'",
+                                                       "typescript-atomizer-autocomplete:dismiss",
+                                                       (htmlEvent: Event) => this.withAutoCompleteInProgress.call(this, htmlEvent, (state: TypeScriptWorkspaceState) => state.autoCompleteState.toggleView())));
+
+        this._disposables.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript'",
+                                                       "typescript-atomizer-autocomplete:confirm",
+                                                       (htmlEvent: Event) => this.withAutoCompleteInProgress.call(this, htmlEvent, (state: TypeScriptWorkspaceState) =>
+                                                           {
+                                                               state.ignoreNextContentChange = true;
+                                                               state.autoCompleteState.confirmAutoComplete();
+
+                                                           })));
+
+        this._disposables.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript'",
+                                                       "typescript-atomizer-autocomplete:select-next",
+                                                       (htmlEvent: Event) => this.withAutoCompleteInProgress.call(this, htmlEvent, (state: TypeScriptWorkspaceState) => state.autoCompleteState.selectNextAutoCompleteItem())));
+
+        this._disposables.push(this._atom.commands.add("atom-text-editor[data-grammar='source typescript'",
+                                                       "typescript-atomizer-autocomplete:select-previous",
+                                                       (htmlEvent: Event) => this.withAutoCompleteInProgress.call(this, htmlEvent, (state: TypeScriptWorkspaceState) => state.autoCompleteState.selectPreviousAutoCompleteItem())));
+
+        var keys: BindingDictionary = { };
+
+        keys["escape"] = "typescript-atomizer-autocomplete:dismiss";
+        keys["tab"]    = "typescript-atomizer-autocomplete:confirm";
+        keys["enter"]  = "typescript-atomizer-autocomplete:confirm";
+        keys["up"]     = "typescript-atomizer-autocomplete:select-previous";
+        keys["down"]   = "typescript-atomizer-autocomplete:select-next";
+
+        this._disposables.push(this._atom.keymaps.add("TypeScriptWorkspace",
+                                                      { "atom-text-editor[data-grammar='source typescript']": keys }));
     }
 
     /**
@@ -59,7 +90,7 @@ class TypeScriptWorkspace implements Disposable
      */
     public dispose(): void
     {
-        this._commands.dispose();
+        this._disposables.dispose();
     }
 
     /**
@@ -122,13 +153,48 @@ class TypeScriptWorkspace implements Disposable
     {
         var state = this._textEditorStates[typescriptTextEditor.id];
 
-        if (state.autoCompleteInProgress)
+        state.contentsChanging = false; // They're no longer changing - they've changed!
+
+        if (state.ignoreNextContentChange)
+        {
+            state.ignoreNextContentChange = false;
+
+            state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
+
+            this.updateStatusBar(state);
+
             return;
+        }
 
-        state.contentsChanging = false;
-        state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
+        var fixes = SelectionFixes.getFixesForSelection(typescriptTextEditor.textEditor, typescriptTextEditor.textEditor.getLastSelection());
 
-        this.updateStatusBar(state);
+        var currentlyInProgress: boolean = state.autoCompleteState.inProgress;
+
+        if (state.isInsideComment)
+        {
+            if (state.autoCompleteState.inProgress)
+                state.toggleAutoComplete();
+        }
+        else
+        {
+            if ((!state.autoCompleteState.inProgress && (!fixes.isEmpty || fixes.isStartOfMemberCompletion))
+                || (state.autoCompleteState.inProgress && (fixes.isEmpty && !fixes.isStartOfMemberCompletion)))
+            {
+                state.toggleAutoComplete();
+            }
+        }
+
+        if (state.autoCompleteState.inProgress && currentlyInProgress)
+        {
+            state.autoCompleteState.updateAutoCompleteFromSelectionFixes(fixes);
+        }
+
+        if (!state.autoCompleteState.inProgress)
+        {
+            state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
+
+            this.updateStatusBar(state);
+        }
     }
 
     /**
@@ -159,6 +225,28 @@ class TypeScriptWorkspace implements Disposable
     }
 
     /**
+     * Invokes a callback only if the auto-complete view is active and manages key binding/HTML event
+     * propagation for that state.
+     *
+     * @param htmlEvent - The event that caused the invocation request.
+     * @param callback - The callback to execute if the auto-complete view is active.
+     */
+    private withAutoCompleteInProgress(htmlEvent: Event, callback: (state: TypeScriptWorkspaceState) => void): void
+    {
+        var state: TypeScriptWorkspaceState = this._textEditorStates[this._workspace.getActiveTextEditor().id];
+
+        if (!state.autoCompleteState.inProgress)
+        {
+            (<any>htmlEvent).abortKeyBinding();
+            return;
+        }
+
+        htmlEvent.stopPropagation();
+
+        callback.call(this, state);
+    }
+
+    /**
      * Called when the auto-complete 'toggle' command has been activated.
      */
     private onToggleAutoComplete(htmlEvent: Event)
@@ -168,7 +256,6 @@ class TypeScriptWorkspace implements Disposable
         if (textEditor.getGrammar().name !== "TypeScript")
         {
             (<any>htmlEvent).abortKeyBinding();
-
             return;
         }
 
@@ -176,7 +263,10 @@ class TypeScriptWorkspace implements Disposable
 
         var state: TypeScriptWorkspaceState = this._textEditorStates[textEditor.id];
 
-        this.executeAfterContentChange(state, () => state.toggleAutoComplete());
+        if (state.autoCompleteState.inProgress)
+            state.toggleAutoComplete();
+        else
+            this.executeAfterContentChange(state, () => state.toggleAutoComplete());
     }
 
     /**

@@ -1,5 +1,2 @@
 "atom-text-editor[data-grammar='source typescript']":
     "ctrl-space": "typescript-atomizer-autocomplete:toggle"
-
-"atom-text-editor[mini]":
-    "ctrl-space": "typescript-atomizer-autocomplete:toggle"
