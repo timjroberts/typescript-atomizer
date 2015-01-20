@@ -10,3 +10,13 @@ interface ModelBasedHTMLElement<T> extends HTMLElement
     detachedCallback(): void;
     setModel(model: T);
 }
+
+interface HTMLElement
+{
+    getBoundingClientRect(): ClientRect;
+}
+
+interface Node
+{
+    getBoundingClientRect(): ClientRect;
+}

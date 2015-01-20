@@ -23,6 +23,11 @@ class TypeScriptAutoCompleteState
         this._autoCompleteView.toggle();
     }
 
+    /**
+     * Updates the auto-complete selections based on the given prefix and suffix.
+     *
+     * @param fixes - The prefix and suffix data determined from the current selection (or cursor position).
+     */
     public updateAutoCompleteFromSelectionFixes(fixes: SelectionFixes): void
     {
         if (this._autoCompleteView.isVisible)

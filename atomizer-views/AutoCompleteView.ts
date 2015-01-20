@@ -63,7 +63,7 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
                 AutoCompleteView.li(() =>
                     {
                         AutoCompleteView.span(this.renderViewForItem(item.item))
-                    })
+                    });
             });
     }
 
@@ -238,14 +238,6 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
     {
         if (this._overlayDecoration)
             this._overlayDecoration.destroy();
-
-        //if (!this._textEditor.isDestroyed() && !this._isDismissing)
-        //{
-        //    this._textEditor.revertToCheckpoint(this._checkpoint);
-        //    this._textEditor.setSelectedBufferRanges(this._originalSelectionBufferRanges);
-
-        //    //atom.workspace.getActivePane().activate();
-        //}
     }
 
     /**
@@ -266,8 +258,6 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
                     var selectionRange: Range = selection.getBufferRange();
                     var startPosition: Point = selectionRange.start;
 
-                    //selection.deleteSelectedText();
-
                     var cursorPosition: Point = this._textEditor.getCursors()[idx].getBufferPosition();
                     var prefixRange = selectionRange.copy();
                     var suffixRange = selectionRange.copy();
@@ -277,9 +267,6 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
 
                     suffixRange.start.column = cursorPosition.column;
                     suffixRange.end.column = cursorPosition.column + item.suffix.length;
-
-                    //buffer.delete(suffixRange);
-                    //buffer.delete(prefixRange);
 
                     newSelectedBufferRanges.push([startPosition, [startPosition.row, startPosition.column + item.infixLength]]);
                 });
@@ -294,7 +281,7 @@ class AutoCompleteView<TItem> extends AtomSpacePenViews.SelectListView<AutoCompl
  * Represents an auto-complete item.
  *
  * An AutoCompleteItem captures the item that is to be displayed in an auto-complete view, along with
- * any prefix and suffix information that is present when the auto-complete was acivated.
+ * any prefix and suffix information that is present when the auto-complete view was acivated.
  */
 class AutoCompleteItem<T> {
     private _item: T;

@@ -9,6 +9,8 @@
     },
     "dependencies":
     {
+        "rx": "*",
+        "atomizer-core": "*",
         "space-pen": "*",
         "atom-space-pen-views": "*"
     },

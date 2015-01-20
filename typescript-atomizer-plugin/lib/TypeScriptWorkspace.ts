@@ -11,6 +11,7 @@ import TypeScriptWorkspaceState = require("./state/TypeScriptWorkspaceState");
 import CompositeDisposable = require("atomizer-core/CompositeDisposable");
 import SelectionFixes = require("atomizer-views/SelectionFixes");
 import TypeScriptAutoCompleteState = require("./state/TypeScriptAutoCompleteState");
+import TypeScriptQuickInfo = require("./TypeScriptQuickInfo");
 
 /**
  * Orchestrates the state of the user interface in regards to the open TypeScript text editors and any global
@@ -102,10 +103,13 @@ class TypeScriptWorkspace implements Disposable
     {
         this._textEditorStates[typescriptTextEditor.id] = new TypeScriptWorkspaceState(typescriptTextEditor);
 
-        typescriptTextEditor.onContentsChaning
+        typescriptTextEditor.onContentsChanging
             .subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanging.call(this, tsTextEditor));
         typescriptTextEditor.onContentsChanged
             .subscribe((tsTextEditor) => this.onTypeScriptTextEditorContentsChanged.call(this, tsTextEditor));
+
+        typescriptTextEditor.onMouseHoverPositionChanged
+            .subscribe((pos) => this.onMouseHoverPositionChanged.call(this, typescriptTextEditor, pos));
 
         typescriptTextEditor.onCursorPositionChanged
             .subscribe((point) => this.onCursorPositionChanged.call(this, typescriptTextEditor, point));
@@ -195,6 +199,24 @@ class TypeScriptWorkspace implements Disposable
 
             this.updateStatusBar(state);
         }
+    }
+
+    private onMouseHoverPositionChanged(typescriptTextEditor: TypeScriptTextEditor, bufferPosition: Point): void
+    {
+        var state = this._textEditorStates[typescriptTextEditor.id];
+
+        if (!bufferPosition)
+        {
+            state.removeTooltip();
+            return;
+        }
+
+        var info: ts.QuickInfo = typescriptTextEditor.getQuickInfoForBufferPosition(bufferPosition);
+
+        if (info)
+            state.setTooltip(new TypeScriptQuickInfo(info, bufferPosition));
+        else
+            state.removeTooltip();
     }
 
     /**
@@ -335,7 +357,7 @@ class TypeScriptWorkspace implements Disposable
 
                     clearInterval(interval);
                 }
-            }, 150);
+            }, 100);
     }
 }
 

@@ -1,5 +1,6 @@
 /// <reference path="../../../typings/TypeScriptServices.d.ts" />
 /// <reference path="../../../atomizer-core/atomizer-core.d.ts" />
+/// <reference path="../../../atomizer-views/atomizer-views.d.ts" />
 
 import ArrayUtils = require("atomizer-core/ArrayUtils");
 import TypeScriptTextEditor = require("../TypeScriptTextEditor");
@@ -8,6 +9,9 @@ import TypeScriptContextView = require("../TypeScriptContextView");
 import DisposableArray = require("atomizer-core/DisposableArray");
 import SelectionFixes = require("atomizer-views/SelectionFixes");
 import TypeScriptAutoCompleteState = require("./TypeScriptAutoCompleteState");
+import TypeScriptQuickInfo = require("../TypeScriptQuickInfo");
+import TooltipView = require("atomizer-views/TooltipView");
+import QuickInfoTooltipView = require("./QuickInfoTooltipView");
 
 /**
  * A private class that represents the global state for an active TypeScript text editor that is
@@ -26,6 +30,7 @@ class TypeScriptWorkspaceState implements Disposable
     private _contentsChanging: boolean;
     private _currentCursorPosition: Point;
     private _ignoreNextChange: boolean;
+    private _toolTip: TooltipView;
 
     /**
      * Initializes a new state object for a given TypeScript text editor.
@@ -113,6 +118,30 @@ class TypeScriptWorkspaceState implements Disposable
     public dispose(): void
     {
         this._diagnosticMarkers.dispose();
+    }
+
+    public setTooltip(text: string, bufferPosition: Point): void;
+    public setTooltip(info: TypeScriptQuickInfo): void;
+    public setTooltip(p1: any, bufferPosition?: Point)
+    {
+        if (p1 instanceof TypeScriptQuickInfo)
+        {
+            this._toolTip = new QuickInfoTooltipView(this._typescriptTextEditor.textEditor, <TypeScriptQuickInfo>p1);
+        }
+        else
+        {
+            this._toolTip = new TooltipView(this._typescriptTextEditor.textEditor, bufferPosition, <string>p1);
+        }
+
+        this._toolTip.attach();
+    }
+
+    public removeTooltip(): void
+    {
+        if (this._toolTip)
+            this._toolTip.detach();
+
+        this._toolTip = null;
     }
 
     /**

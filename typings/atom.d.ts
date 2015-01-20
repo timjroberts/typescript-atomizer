@@ -239,6 +239,9 @@ interface TextEditor
     setSelectedBufferRanges(ranges: Array<Range>, options?: any): void;
     setSelectedBufferRanges(ranges: any[][], options?: any): void;
 
+    screenPositionForPixelPosition(pixelPosition: { top: number; left: number }): Point;
+    bufferPositionForScreenPosition(screenPoint: Point, options?: any): Point;
+
     /**
      * Batch multiple operations as a single undo/redo step.
      *

@@ -2,12 +2,16 @@
 /// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="../../typings/TypeScriptServices.d.ts" />
 /// <reference path="../../atomizer-core/atomizer-core.d.ts" />
+/// <reference path="../../atomizer-views/atomizer-views.d.ts" />
+/// <reference path="./core/HTMLExtensions.d.ts" />
 
 import ObservableFactory = require("atomizer-core/ObservableFactory");
 import Rx = require("rx");
 import TypeScriptDocumentRegistry = require("./TypeScriptDocumentRegistry");
 import TypeScriptDocument = require("./TypeScriptDocument");
 import CompositeDisposable = require("atomizer-core/CompositeDisposable");
+import HtmlElementAdapter = require("atomizer-views/HtmlElementAdapter");
+import TypeScriptQuickInfo = require("./TypeScriptQuickInfo");
 
 /**
  * Represents all the essential state for a text buffer opened upon a TypeScript
@@ -25,7 +29,9 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     private _onContentsChanging: Rx.Subject<TypeScriptTextEditor>;
     private _onContentsChanged: Rx.Subject<TypeScriptTextEditor>;
     private _onCursorPositionChanged: Rx.Subject<Point>;
+    private _onMouseHoverPositionChanged: Rx.Subject<Point>;
     private _onBeforePathChanged: Rx.Subject<TypeScriptTextEditor>;
+    private _htmlElement: HTMLElement;
 
     /**
      * Initializes a new {TypeScriptTextEditor}.
@@ -46,9 +52,12 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
         this._onContentsChanging = new Rx.Subject<TypeScriptTextEditor>();
         this._onContentsChanged = new Rx.Subject<TypeScriptTextEditor>();
         this._onCursorPositionChanged = new Rx.Subject<Point>();
+        this._onMouseHoverPositionChanged = new Rx.Subject<Point>();
         this._onBeforePathChanged = new Rx.Subject<TypeScriptTextEditor>();
+        this._htmlElement = (<any>atom.views.getView(textEditor)).shadowRoot.getElementsByClassName("lines")[0];
 
         var subscriptions = new CompositeDisposable();
+        var editorViewAdapter = new HtmlElementAdapter(this._htmlElement);
 
         subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidChange(h))
             .subscribe(() =>
@@ -82,11 +91,14 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
         subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidDestroy(h))
             .subscribe(() =>
             {
+                editorViewAdapter.dispose();
+
                 this._onClosed.onNext(this);
 
                 this._onContentsChanging.onCompleted();
                 this._onContentsChanged.onCompleted();
                 this._onCursorPositionChanged.onCompleted();
+                this._onMouseHoverPositionChanged.onCompleted();
                 this._onBeforePathChanged.onCompleted();
                 this._onClosed.onCompleted();
 
@@ -95,12 +107,15 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
                 this._languageService.dispose();
             }));
 
+        subscriptions.push(editorViewAdapter.onMouseMove.subscribe((e) => this.onMouseMove.call(this, e)));
+        subscriptions.push(editorViewAdapter.onMouseHover.subscribe((e) => this.onMouseHover.call(this, e)));
+
         this._documentRegistry.openBufferedDocumentForEditor(this);
         this._languageService = ts.createLanguageService(this, this._documentRegistry);
     }
 
     /**
-     * Get the unique identifier of tje current TypeScript text editor.
+     * Get the unique identifier of the current TypeScript text editor.
      */
     public get id(): number
     {
@@ -144,7 +159,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
      * Gets an observable that when subscribed to will indicate when the TypeScript text
      * editor contents have began changing.
      */
-    public get onContentsChaning(): Rx.Observable<TypeScriptTextEditor>
+    public get onContentsChanging(): Rx.Observable<TypeScriptTextEditor>
     {
         return this._onContentsChanging;
     }
@@ -165,6 +180,15 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     public get onCursorPositionChanged(): Rx.Observable<Point>
     {
         return this._onCursorPositionChanged;
+    }
+
+    /**
+     * Gets an observable that when subscribed to will yield data about changes in buffer positions
+     * for which the mouse has hovered over.
+     */
+    public get onMouseHoverPositionChanged(): Rx.Observable<Point>
+    {
+        return this._onMouseHoverPositionChanged;
     }
 
     /**
@@ -278,13 +302,12 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     public getCompilationSettings(): ts.CompilerOptions
     {
         var settings: ts.CompilerOptions =
-        {
-            noLib: false,
-            module: ts.ModuleKind.CommonJS, //ts.ModuleKind.None,
-            target: ts.ScriptTarget.ES5,
-            noResolve: false
-
-        }
+            {
+                noLib: false,
+                module: ts.ModuleKind.CommonJS, //ts.ModuleKind.None,
+                target: ts.ScriptTarget.ES5,
+                noResolve: false
+            }
 
         return settings;
     }
@@ -296,20 +319,36 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     {
         var cursorPosition: Point = this._textEditor.getCursorBufferPosition();
         var cursorScope: ScopeDescriptor = this._textEditor.scopeDescriptorForBufferPosition(cursorPosition);
-
-        var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(this._textEditor.getText());
-        var typeScriptPosition = bufferLineStartPositions[cursorPosition.row] + cursorPosition.column;
+        var typescriptPosition: number = TypeScriptTextEditor.bufferPositionToTypeScriptPosition(this._textEditor, cursorPosition);
 
         try
         {
-            return this._languageService.getCompletionsAtPosition(this._normalizedPath, typeScriptPosition, true);
+            return this._languageService.getCompletionsAtPosition(this._normalizedPath, typescriptPosition, true);
         }
         catch (error)
         { }
     }
 
     /**
+     * Retrieves the TypeScript quick-info details for a given buffer position (or the current cursor position
+     * if not supplied).
+     *
+     * @param bufferPosition (optional) The buffer position to obtain a quick-info object for.
+     */
+    public getQuickInfoForBufferPosition(bufferPosition?: Point): ts.QuickInfo
+    {
+        if (!bufferPosition)
+            bufferPosition = this._textEditor.getCursorBufferPosition();
+
+        var typescriptPosition: number = TypeScriptTextEditor.bufferPositionToTypeScriptPosition(this._textEditor, bufferPosition);
+
+        return this._languageService.getQuickInfoAtPosition(this._normalizedPath, typescriptPosition);
+    }
+
+    /**
      * called when the path of the underlying text buffer changes.
+     *
+     * @param newPath The new path of the text buffer.
      */
     private onPathChanged(newPath: string): void
     {
@@ -317,6 +356,46 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
 
         this._documentRegistry.updateDocumentPath(this, normalizedNewPath);
         this._normalizedPath = normalizedNewPath;
+    }
+
+    /**
+     * called when the mouse pointer moves over the text editor.
+     *
+     * @param htmlEvent The event data.
+     */
+    private onMouseMove(htmlEvent: Event): void
+    {
+        this._onMouseHoverPositionChanged.onNext(null);
+    }
+
+    /**
+     * called when the mouse pointer hovers over the text editor.
+     *
+     * Will place an event in the 'onMouseHoverPositionChanged' observable.
+     *
+     * @param htmlEvent The event data.
+     */
+    private onMouseHover(htmlEvent: Event): void
+    {
+        var rect: ClientRect = this._htmlElement.getBoundingClientRect();
+
+        var pos =
+            {
+                top: (<any>htmlEvent).clientY - rect.top,
+                left: (<any>htmlEvent).clientX - rect.left
+            };
+
+        var screenPoint: Point = this._textEditor.screenPositionForPixelPosition(pos);
+        var bufferPoint: Point = this._textEditor.bufferPositionForScreenPosition(screenPoint);
+
+        this._onMouseHoverPositionChanged.onNext(bufferPoint);
+    }
+
+    private static bufferPositionToTypeScriptPosition(textEditor: TextEditor, bufferPos: Point): number
+    {
+        var bufferLineStartPositions: number[] = TypeScript.TextUtilities.parseLineStarts(textEditor.getText());
+
+        return bufferLineStartPositions[bufferPos.row] + bufferPos.column;
     }
 }
 

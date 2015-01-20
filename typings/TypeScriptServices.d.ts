@@ -178,6 +178,27 @@ declare module ts
         entries: CompletionEntry[];
     }
 
+    export interface SymbolDisplayPart
+    {
+        text: string;
+        kind: string;
+    }
+
+    export interface CompletionEntryDetails
+    {
+        name: string;
+        kind: string;            // see ScriptElementKind
+        kindModifiers: string;   // see ScriptElementKindModifier, comma separated
+        displayParts: SymbolDisplayPart[];
+        documentation: SymbolDisplayPart[];
+    }
+
+    export interface TextSpan
+    {
+        start: number;
+        length: number;
+    }
+
     export interface CancellationToken
     {
         isCancellationRequested(): boolean;
@@ -186,6 +207,15 @@ declare module ts
     export interface Logger
     {
         log(s: string): void;
+    }
+
+    export interface QuickInfo
+    {
+        kind: string;
+        kindModifiers: string;
+        textSpan: TextSpan;
+        displayParts: SymbolDisplayPart[];
+        documentation: SymbolDisplayPart[];
     }
 
     export interface LanguageServiceHost extends Logger
@@ -206,6 +236,9 @@ declare module ts
         getSemanticDiagnostics(fileName: string): Diagnostic[];
 
         getCompletionsAtPosition(fileName: string, position: number, isMemberCompletion: boolean): CompletionInfo;
+        getCompletionEntryDetails(fileName: string, position: number, entryName: string): CompletionEntryDetails;
+
+        getQuickInfoAtPosition(fileName: string, position: number): QuickInfo;
 
         dispose(): void;
     }
