@@ -31,6 +31,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     private _onCursorPositionChanged: Rx.Subject<Point>;
     private _onMouseHoverPositionChanged: Rx.Subject<Point>;
     private _onBeforePathChanged: Rx.Subject<TypeScriptTextEditor>;
+    private _textEditorElement: TextEditorElement;
     private _htmlElement: HTMLElement;
 
     /**
@@ -54,7 +55,9 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
         this._onCursorPositionChanged = new Rx.Subject<Point>();
         this._onMouseHoverPositionChanged = new Rx.Subject<Point>();
         this._onBeforePathChanged = new Rx.Subject<TypeScriptTextEditor>();
-        this._htmlElement = (<any>atom.views.getView(textEditor)).shadowRoot.getElementsByClassName("lines")[0];
+
+        this._textEditorElement = <TextEditorElement>atom.views.getView(textEditor);
+        this._htmlElement = (<any>this._textEditorElement).shadowRoot.getElementsByClassName("lines")[0];
 
         var subscriptions = new CompositeDisposable();
         var editorViewAdapter = new HtmlElementAdapter(this._htmlElement);
@@ -385,10 +388,13 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
                 left: (<any>htmlEvent).clientX - rect.left
             };
 
-        var screenPoint: Point = this._textEditor.screenPositionForPixelPosition(pos);
-        var bufferPoint: Point = this._textEditor.bufferPositionForScreenPosition(screenPoint);
+        var screenPosition: Point = this._textEditor.screenPositionForPixelPosition(pos);
+        var bufferPosition: Point = this._textEditor.bufferPositionForScreenPosition(screenPosition);
 
-        this._onMouseHoverPositionChanged.onNext(bufferPoint);
+        var currentCharacterPixel = this._textEditorElement.pixelPositionForBufferPosition(bufferPosition);
+        var nextCharacterPixel = this._textEditorElement.pixelPositionForBufferPosition([bufferPosition.row, bufferPosition.column + 1]);
+
+        this._onMouseHoverPositionChanged.onNext(currentCharacterPixel.left >= nextCharacterPixel.left ? null : bufferPosition);
     }
 
     private static bufferPositionToTypeScriptPosition(textEditor: TextEditor, bufferPos: Point): number

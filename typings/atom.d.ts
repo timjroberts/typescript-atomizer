@@ -436,6 +436,25 @@ interface KeymapManager
 }
 
 /**
+ * Represents a HTML element that is an Atom text editor.
+ */
+interface TextEditorElement extends HTMLElement
+{
+    /**
+     * Converts a buffer position to a pixel position.
+     *
+     * @param bufferPosition A Point that represents the buffer position.
+     */
+    pixelPositionForBufferPosition(bufferPosition: Point): { top: number; left: number }
+    /**
+     * Converts a buffer position to a pixel position.
+     *
+     * @param bufferPosition An array with elements represents the buffer position's row and column.
+     */
+    pixelPositionForBufferPosition(bufferPosition: number[]): { top: number; left: number }
+}
+
+/**
  * Atom global for dealing with packages, themes, menus, and the window.
  *
  * An instance of {AtomGlobal} is always available via the 'atom' global property.
