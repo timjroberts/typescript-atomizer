@@ -184,6 +184,7 @@ class TypeScriptWorkspace implements Disposable
             if ((!state.autoCompleteState.inProgress && (!fixes.isEmpty || fixes.isStartOfMemberCompletion))
                 || (state.autoCompleteState.inProgress && (fixes.isEmpty && !fixes.isStartOfMemberCompletion)))
             {
+                state.removeTooltip();
                 state.toggleAutoComplete();
             }
         }
@@ -210,6 +211,9 @@ class TypeScriptWorkspace implements Disposable
             state.removeTooltip();
             return;
         }
+
+        if (state.autoCompleteState.inProgress)
+            return;
 
         var info: ts.QuickInfo = typescriptTextEditor.getQuickInfoForBufferPosition(bufferPosition);
 
@@ -285,6 +289,7 @@ class TypeScriptWorkspace implements Disposable
 
         var state: TypeScriptWorkspaceState = this._textEditorStates[textEditor.id];
 
+        state.removeTooltip();
         if (state.autoCompleteState.inProgress)
             state.toggleAutoComplete();
         else
@@ -346,7 +351,7 @@ class TypeScriptWorkspace implements Disposable
     private executeAfterContentChange(state: TypeScriptWorkspaceState, func: Function): void
     {
         var intervalCount = 0;
-        var maxIntervals = 3;
+        var maxIntervals = 5;
 
         var interval = setInterval(() =>
             {
@@ -357,7 +362,7 @@ class TypeScriptWorkspace implements Disposable
 
                     clearInterval(interval);
                 }
-            }, 100);
+            }, 10);
     }
 }
 

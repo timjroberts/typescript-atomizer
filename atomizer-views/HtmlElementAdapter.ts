@@ -92,6 +92,11 @@ class HtmlElementAdapter implements Disposable
                     }, 400);
             }));
 
+        this._subscriptions.push(this.onMouseOut.subscribe((e: Event) =>
+            {
+                clearTimeout(hoverTimeout);
+            }));
+
         return onHoverSubject;
     }
 }

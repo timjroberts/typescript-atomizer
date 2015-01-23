@@ -111,6 +111,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
             }));
 
         subscriptions.push(editorViewAdapter.onMouseMove.subscribe((e) => this.onMouseMove.call(this, e)));
+        subscriptions.push(editorViewAdapter.onMouseOut.subscribe((e) => this.onMouseOut.call(this, e)));
         subscriptions.push(editorViewAdapter.onMouseHover.subscribe((e) => this.onMouseHover.call(this, e)));
 
         this._documentRegistry.openBufferedDocumentForEditor(this);
@@ -367,6 +368,16 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
      * @param htmlEvent The event data.
      */
     private onMouseMove(htmlEvent: Event): void
+    {
+        this._onMouseHoverPositionChanged.onNext(null);
+    }
+
+    /**
+     * called when the mouse pointer moves out of the text editor.
+     *
+     * @param htmlEvent The event data.
+     */
+    private onMouseOut(htmlElement: Event): void
     {
         this._onMouseHoverPositionChanged.onNext(null);
     }
