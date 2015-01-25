@@ -1,7 +1,0 @@
-{
-    "links":
-        {
-            "typescript-atomizer-typings": "typescript-atomizer-typings",
-            "typescript-atomizer": "typescript-atomizer-plugin"
-        }
-}
