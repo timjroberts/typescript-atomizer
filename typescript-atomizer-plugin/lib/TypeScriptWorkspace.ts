@@ -22,7 +22,6 @@ class TypeScriptWorkspace implements Disposable
     private _atom: AtomGlobal;
     private _textEditorStates: NumberIndexDictionary<TypeScriptWorkspaceState>;
     private _workspace: Workspace;
-    private _workspaceView: WorkspaceView;
     private _viewRegistry: ViewRegistry;
     private _statusBar: TypeScriptDiagnosticStatusBar;
     private _disposables: CompositeDisposable;
@@ -40,7 +39,6 @@ class TypeScriptWorkspace implements Disposable
         this._atom = atom;
         this._textEditorStates = { };
         this._workspace = atom.workspace;
-        this._workspaceView = atom.workspaceView;
         this._viewRegistry = atom.views;
         this._statusBar = null;
 
@@ -335,11 +333,13 @@ class TypeScriptWorkspace implements Disposable
 
             statusBarView.setModel(this._statusBar);
 
-            if (this._workspaceView.statusBar)
+            var statusBar = document.querySelector("status-bar");
+
+            if (statusBar)
             {
                 statusBarView.classList.add("inline-block");
 
-                this._workspaceView.statusBar.prependLeft(statusBarView);
+                (<any>statusBar).addLeftTile({ item: statusBarView, priority: -100 });
             }
         }
 
