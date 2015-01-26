@@ -158,14 +158,11 @@ class TypeScriptWorkspace implements Disposable
         var state = this._textEditorStates[typescriptTextEditor.id];
 
         state.contentsChanging = false; // They're no longer changing - they've changed!
+        state.contentsChanged = true;
 
         if (state.ignoreNextContentChange)
         {
             state.ignoreNextContentChange = false;
-
-            state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
-
-            this.updateStatusBar(state);
 
             return;
         }
@@ -174,7 +171,7 @@ class TypeScriptWorkspace implements Disposable
 
         var currentlyInProgress: boolean = state.autoCompleteState.inProgress;
 
-        if (state.isInsideComment)
+        if (state.isInsideComment || state.isInsideString)
         {
             if (state.autoCompleteState.inProgress)
                 state.toggleAutoComplete();
@@ -193,13 +190,6 @@ class TypeScriptWorkspace implements Disposable
         {
             state.autoCompleteState.updateAutoCompleteFromSelectionFixes(fixes);
         }
-
-        if (!state.autoCompleteState.inProgress)
-        {
-            state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
-
-            this.updateStatusBar(state);
-        }
     }
 
     private onMouseHoverPositionChanged(typescriptTextEditor: TypeScriptTextEditor, bufferPosition: Point): void
@@ -215,12 +205,21 @@ class TypeScriptWorkspace implements Disposable
         if (state.autoCompleteState.inProgress)
             return;
 
-        var info: ts.QuickInfo = typescriptTextEditor.getQuickInfoForBufferPosition(bufferPosition);
+        var diagnostic: ts.Diagnostic = state.getDiagnosticForBufferPosition(bufferPosition);
 
-        if (info)
-            state.setTooltip(new TypeScriptQuickInfo(info, bufferPosition));
+        if (diagnostic)
+        {
+            state.setTooltip(diagnostic.messageText, bufferPosition);
+        }
         else
-            state.removeTooltip();
+        {
+            var info: ts.QuickInfo = typescriptTextEditor.getQuickInfoForBufferPosition(bufferPosition);
+
+            if (info)
+                state.setTooltip(new TypeScriptQuickInfo(info, bufferPosition));
+            else
+                state.removeTooltip();
+        }
     }
 
     /**
@@ -232,7 +231,14 @@ class TypeScriptWorkspace implements Disposable
     {
         var state = this._textEditorStates[typescriptTextEditor.id];
 
-        state.updateFromCursorPosition(point);
+        state.updateCursorPosition(point);
+
+        if (state.contentsChanged && state.cursorRowChanged())
+        {
+            state.contentsChanged = false;
+            state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
+        }
+
         this.updateStatusBar(state);
     }
 
@@ -310,7 +316,6 @@ class TypeScriptWorkspace implements Disposable
         var statusBar: TypeScriptDiagnosticStatusBar = this.getStatusBar();
 
         statusBar.inError = state.inError;
-        statusBar.message = state.message;
 
         statusBar.show();
     }
@@ -362,7 +367,7 @@ class TypeScriptWorkspace implements Disposable
 
                     clearInterval(interval);
                 }
-            }, 10);
+            }, 2);
     }
 }
 

@@ -8,7 +8,6 @@ import Rx = require("rx");
 class TypeScriptDiagnosticStatusBar
 {
     private _onErrorStateChanged: Rx.Subject<boolean>;
-    private _onMessageChanged: Rx.Subject<string>;
     private _onVisibilityChanged: Rx.Subject<boolean>;
     private _inError: boolean;
     private _message: string;
@@ -19,7 +18,6 @@ class TypeScriptDiagnosticStatusBar
     constructor()
     {
         this._onErrorStateChanged = new Rx.Subject<boolean>();
-        this._onMessageChanged = new Rx.Subject<string>();
         this._onVisibilityChanged = new Rx.Subject<boolean>();
     }
 
@@ -37,27 +35,9 @@ class TypeScriptDiagnosticStatusBar
     }
 
     /**
-     * Gets the message currently being displayed by the status bar.
-     */
-    public get message(): string { return this._message; }
-    /**
-     * Sets the message to be displayed by the status bar.
-     */
-    public set message(value: string)
-    {
-        this._message = value;
-        this._onMessageChanged.onNext(value);
-    }
-
-    /**
      * Gets an observable that when subscribed to will indicate when the status bar's error state has changed.
      */
     public get onErrorStateChanged(): Rx.Observable<boolean> { return this._onErrorStateChanged; }
-
-    /**
-     * Gets an observable that when subscribed to will indicate when the status bar's current message has changed.
-     */
-    public get onMessageChanged(): Rx.Observable<string> { return this._onMessageChanged; }
 
     /**
      * Gets an observable that when subscribed to will indicate when the status bar's visibility has changed.

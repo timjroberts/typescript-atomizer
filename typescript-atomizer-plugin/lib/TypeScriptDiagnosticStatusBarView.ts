@@ -16,11 +16,6 @@ elementPrototype.createdCallback =
 
         this.statusBarElementDiv.appendChild(this.errorStatusDiv);
 
-        this.highlightedErrorDiv = document.createElement("span");
-        this.highlightedErrorDiv.classList.add("text-highlight");
-
-        this.statusBarElementDiv.appendChild(this.highlightedErrorDiv);
-
         this.appendChild(this.statusBarElementDiv);
     }
 
@@ -52,12 +47,6 @@ elementPrototype.setModel =
                     this.errorStatusDiv.classList.remove("highlight-error");
                     this.errorStatusDiv.classList.add("highlight-success");
                 }
-            });
-
-        statusBar.onMessageChanged
-            .subscribe((message: string) =>
-            {
-                this.highlightedErrorDiv.textContent = " " + message;
             });
     }
 

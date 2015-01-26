@@ -13,6 +13,12 @@ import TypeScriptQuickInfo = require("../TypeScriptQuickInfo");
 import TooltipView = require("atomizer-views/TooltipView");
 import QuickInfoTooltipView = require("./QuickInfoTooltipView");
 
+enum CursorPosition
+{
+    Previous = 0,
+    Current = 1
+}
+
 /**
  * A private class that represents the global state for an active TypeScript text editor that is
  * open in the document registry and managed in the TypeScript workspace.
@@ -28,9 +34,11 @@ class TypeScriptWorkspaceState implements Disposable
     private _diagnostics: Array<ts.Diagnostic>;
     private _diagnosticMarkers: DisposableArray<Marker>;
     private _contentsChanging: boolean;
+    private _contentsChanged: boolean;
     private _currentCursorPosition: Point;
     private _ignoreNextChange: boolean;
     private _toolTip: TooltipView;
+    private _cursorPositions: Array<Point>;
 
     /**
      * Initializes a new state object for a given TypeScript text editor.
@@ -50,6 +58,8 @@ class TypeScriptWorkspaceState implements Disposable
         this._currentMessage = null;
         this._defaultMessage = "";
         this._ignoreNextChange = true;
+
+        this._cursorPositions = [];
     }
 
     /**
@@ -61,21 +71,6 @@ class TypeScriptWorkspaceState implements Disposable
      * Gets a flag indicating whether the TypeScript text editor has diagnostic errors.
      */
     public get inError(): boolean { return this._inError; }
-
-    /**
-     * Gets a message to display (usually a TypeScript diagnostic error).
-     */
-    public get message(): string { return this._currentMessage !== null ? this._currentMessage : this._defaultMessage; }
-    /**
-     * Sets a message to display.
-     *
-     * @param {string} value - The message to be displayed. If null is specified, then the 'message' becomes
-     * the default message determined by the current diagnostics.
-     */
-    public set message(value: string)
-    {
-        this._currentMessage = value;
-    }
 
     /**
      * Gets a flag indicating whether the TypeScript text editor is changing its buffer contents.
@@ -92,6 +87,21 @@ class TypeScriptWorkspaceState implements Disposable
         this._contentsChanging = value;
     }
 
+    /**
+     * Gets a flag indicating whether the TypeScript text editor has changed its buffer contents.
+     */
+    public get contentsChanged(): boolean
+    {
+        return this._contentsChanged;
+    }
+    /**
+     * Sets a flag indicating whether the TypeScript text editor has changed its buffer contents.
+     */
+    public set contentsChanged(value: boolean)
+    {
+        this._contentsChanged = value;
+    }
+
     public get ignoreNextContentChange(): boolean { return this._ignoreNextChange; }
     public set ignoreNextContentChange(value: boolean) { this._ignoreNextChange = value; }
 
@@ -102,14 +112,12 @@ class TypeScriptWorkspaceState implements Disposable
 
     public get isInsideComment(): boolean
     {
-        var scopes = this._typescriptTextEditor.textEditor.getLastCursor().getScopeDescriptor().getScopesArray();
+        return this.getIndexOfPartialCursorScope("comment") >= 0;
+    }
 
-        var index = ArrayUtils.findIndex(scopes, (s: string) =>
-            {
-                return s.indexOf("comment") === 0;
-            });
-
-        return index >= 0;
+    public get isInsideString(): boolean
+    {
+        return this.getIndexOfPartialCursorScope("string.quoted") >= 0;
     }
 
     /**
@@ -184,35 +192,25 @@ class TypeScriptWorkspaceState implements Disposable
             });
     }
 
-    /**
-     * Updates the current state from the supplied cursor position.
-     *
-     * If the cursor has moved into the bounds of a marker that represents a diagnostic error, then the diagnostic text will
-     * be displayed in the status bar.
-     *
-     * @param {Point} cursorPosition - The row and column of the cursor position.
-     */
-    public updateFromCursorPosition(cursorPosition: Point)
+    public updateCursorPosition(cursorPosition: Point)
     {
-        if (this._currentCursorPosition && this._currentCursorPosition.row !== cursorPosition.row)
-        {
-            if (this._autoCompleteState.inProgress)
-                this._autoCompleteState.toggleView();
-        }
+        this._cursorPositions[CursorPosition.Previous] = this._cursorPositions[CursorPosition.Current];
+        this._cursorPositions[CursorPosition.Current] = cursorPosition;
+    }
 
-        var index: number = this._diagnosticMarkers.findIndex((m: Marker) => { return m.getScreenRange().containsPoint(cursorPosition); });
+    public cursorRowChanged(): boolean
+    {
+        var previousRow: number = this._cursorPositions[CursorPosition.Previous] ? this._cursorPositions[CursorPosition.Previous].row : 0;
+        var currentRow: number = this._cursorPositions[CursorPosition.Current].row;
 
-        if (index >= 0)
-        {
-            this.message = this._diagnostics[index].messageText;
-            //this.toggleContext();
-        }
-        else
-        {
-            this.message = null;
-        }
+        return currentRow != previousRow;
+    }
 
-        this._currentCursorPosition = cursorPosition;
+    public getDiagnosticForBufferPosition(bufferPosition: Point): ts.Diagnostic
+    {
+        var index: number = this._diagnosticMarkers.findIndex((m: Marker) => { return m.getScreenRange().containsPoint(bufferPosition); });
+
+        return index >= 0 ? this._diagnostics[index] : null;
     }
 
     /**
@@ -226,6 +224,18 @@ class TypeScriptWorkspaceState implements Disposable
     public toggleContext(): void
     {
         this._contextView.toggle();
+    }
+
+    private getIndexOfPartialCursorScope(scope: string): number
+    {
+        var scopes = this._typescriptTextEditor.textEditor.getLastCursor().getScopeDescriptor().getScopesArray();
+
+        var index = ArrayUtils.findIndex(scopes, (s: string) =>
+            {
+                return s.indexOf(scope) === 0;
+            });
+
+        return index;
     }
 
     /**
