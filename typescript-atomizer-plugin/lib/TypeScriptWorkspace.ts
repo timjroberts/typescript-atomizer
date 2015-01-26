@@ -237,6 +237,9 @@ class TypeScriptWorkspace implements Disposable
             state.updateFromTypeScriptDiagnostics(typescriptTextEditor.getLanguageDiagnostics());
         }
 
+        if (state.autoCompleteState.inProgress)
+            state.toggleAutoComplete();
+
         this.updateStatusBar(state);
     }
 
