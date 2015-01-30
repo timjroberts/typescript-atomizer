@@ -334,6 +334,22 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     }
 
     /**
+     * Retrieves the TypeScript signature help items for the current cursor position.
+     */
+    public getSignatureHelpForCursor(): ts.SignatureHelpItems
+    {
+        var cursorPosition: Point = this._textEditor.getCursorBufferPosition();
+        var typescriptPosition: number = TypeScriptTextEditor.bufferPositionToTypeScriptPosition(this._textEditor, cursorPosition);
+
+        try
+        {
+            return this._languageService.getSignatureHelpItems(this._normalizedPath, typescriptPosition);
+        }
+        catch (error)
+        { }
+    }
+
+    /**
      * Retrieves the TypeScript quick-info details for a given buffer position (or the current cursor position
      * if not supplied).
      *

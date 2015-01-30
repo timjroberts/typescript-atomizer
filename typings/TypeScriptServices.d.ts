@@ -199,6 +199,30 @@ declare module ts
         length: number;
     }
 
+    interface SignatureHelpParameter {
+        name: string;
+        documentation: SymbolDisplayPart[];
+        displayParts: SymbolDisplayPart[];
+        isOptional: boolean;
+    }
+
+    interface SignatureHelpItem {
+        isVariadic: boolean;
+        prefixDisplayParts: SymbolDisplayPart[];
+        suffixDisplayParts: SymbolDisplayPart[];
+        separatorDisplayParts: SymbolDisplayPart[];
+        parameters: SignatureHelpParameter[];
+        documentation: SymbolDisplayPart[];
+    }
+
+    interface SignatureHelpItems {
+        items: SignatureHelpItem[];
+        applicableSpan: TextSpan;
+        selectedItemIndex: number;
+        argumentIndex: number;
+        argumentCount: number;
+    }
+
     export interface CancellationToken
     {
         isCancellationRequested(): boolean;
@@ -239,6 +263,8 @@ declare module ts
         getCompletionEntryDetails(fileName: string, position: number, entryName: string): CompletionEntryDetails;
 
         getQuickInfoAtPosition(fileName: string, position: number): QuickInfo;
+
+        getSignatureHelpItems(fileName: string, position: number): SignatureHelpItems;
 
         dispose(): void;
     }

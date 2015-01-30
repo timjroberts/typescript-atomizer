@@ -12,6 +12,7 @@ import TypeScriptAutoCompleteState = require("./TypeScriptAutoCompleteState");
 import TypeScriptQuickInfo = require("../TypeScriptQuickInfo");
 import TooltipView = require("atomizer-views/TooltipView");
 import QuickInfoTooltipView = require("./QuickInfoTooltipView");
+import SignatureHelpItemsView = require("./SignatureHelpItemsView");
 
 enum CursorPosition
 {
@@ -39,6 +40,7 @@ class TypeScriptWorkspaceState implements Disposable
     private _ignoreNextChange: boolean;
     private _toolTip: TooltipView;
     private _cursorPositions: Array<Point>;
+    private _signatureHelpItemsView: SignatureHelpItemsView;
 
     /**
      * Initializes a new state object for a given TypeScript text editor.
@@ -49,6 +51,7 @@ class TypeScriptWorkspaceState implements Disposable
     {
         this._typescriptTextEditor = typescriptTextEditor;
         this._autoCompleteState = new TypeScriptAutoCompleteState(typescriptTextEditor);
+        this._signatureHelpItemsView = new SignatureHelpItemsView(typescriptTextEditor.textEditor);
         this._contextView = new TypeScriptContextView(typescriptTextEditor);
 
         this._diagnostics = [ ];
@@ -219,6 +222,16 @@ class TypeScriptWorkspaceState implements Disposable
     public toggleAutoComplete(): void
     {
         this._autoCompleteState.toggleView();
+    }
+
+    public toggleSignatureHelp(signatureHelpItems: ts.SignatureHelpItems): void
+    {
+        this._signatureHelpItemsView.setHelpItems(signatureHelpItems);
+
+        if (this._signatureHelpItemsView.isVisible() && !signatureHelpItems)
+            this._signatureHelpItemsView.detach();
+        else if (!this._signatureHelpItemsView.isVisible() && signatureHelpItems)
+            this._signatureHelpItemsView.attach();
     }
 
     public toggleContext(): void

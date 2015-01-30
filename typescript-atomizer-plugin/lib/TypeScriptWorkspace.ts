@@ -165,7 +165,13 @@ class TypeScriptWorkspace implements Disposable
             return;
         }
 
+        var signatureHelpItems = typescriptTextEditor.getSignatureHelpForCursor();
         var fixes = SelectionFixes.getFixesForSelection(typescriptTextEditor.textEditor, typescriptTextEditor.textEditor.getLastSelection());
+
+        state.toggleSignatureHelp(signatureHelpItems);
+
+        if (signatureHelpItems)
+            return;
 
         var currentlyInProgress: boolean = state.autoCompleteState.inProgress;
 
