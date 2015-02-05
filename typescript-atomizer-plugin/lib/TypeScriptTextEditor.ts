@@ -28,7 +28,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
     private _onClosed: Rx.Subject<TypeScriptTextEditor>;
     private _onContentsChanging: Rx.Subject<TypeScriptTextEditor>;
     private _onContentsChanged: Rx.Subject<TypeScriptTextEditor>;
-    private _onCursorPositionChanged: Rx.Subject<Point>;
+    private _onCursorPositionChanged: Rx.Subject<CursorPositionChangeEventData>;
     private _onMouseHoverPositionChanged: Rx.Subject<Point>;
     private _onBeforePathChanged: Rx.Subject<TypeScriptTextEditor>;
     private _textEditorElement: TextEditorElement;
@@ -52,7 +52,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
         this._onClosed = new Rx.Subject<TypeScriptTextEditor>();
         this._onContentsChanging = new Rx.Subject<TypeScriptTextEditor>();
         this._onContentsChanged = new Rx.Subject<TypeScriptTextEditor>();
-        this._onCursorPositionChanged = new Rx.Subject<Point>();
+        this._onCursorPositionChanged = new Rx.Subject<CursorPositionChangeEventData>();
         this._onMouseHoverPositionChanged = new Rx.Subject<Point>();
         this._onBeforePathChanged = new Rx.Subject<TypeScriptTextEditor>();
 
@@ -74,14 +74,10 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
                 this._onContentsChanged.onNext(this);
             }));
 
-        subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.getLastCursor().onDidChangePosition(h))
-            .select((_, idx: number, obs: Rx.Observable<void>) =>
+        subscriptions.push(ObservableFactory.createDisposableObservable<CursorPositionChangeEventData>((h) => this._textEditor.getLastCursor().onDidChangePosition(h))
+            .subscribe((eventData: CursorPositionChangeEventData) =>
             {
-                return this._textEditor.getLastCursor().getScreenPosition();
-            })
-            .subscribe((point: Point) =>
-            {
-                this._onCursorPositionChanged.onNext(point);
+                this._onCursorPositionChanged.onNext(eventData);
             }));
 
         subscriptions.push(ObservableFactory.createDisposableObservable<void>((h) => this._textEditor.onDidChangePath(h))
@@ -181,7 +177,7 @@ class TypeScriptTextEditor implements ts.LanguageServiceHost
      * Gets an observable that when subscribed to will indicate when the cursor position
      * has changed in the editor.
      */
-    public get onCursorPositionChanged(): Rx.Observable<Point>
+    public get onCursorPositionChanged(): Rx.Observable<CursorPositionChangeEventData>
     {
         return this._onCursorPositionChanged;
     }

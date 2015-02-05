@@ -18,7 +18,7 @@ class SignatureHelpItemsTooltipView extends SpacePen.View
         this._signatureHelpItems = null;
     }
 
-    public toggle(): boolean
+    public toggleView(): boolean
     {
         if (this.isVisible())
             this.detach();
@@ -30,6 +30,9 @@ class SignatureHelpItemsTooltipView extends SpacePen.View
 
     public attach(): void
     {
+        while ((<any>this).element.firstChild)
+            (<any>this).element.removeChild((<any>this).element.firstChild);
+
         (<any>this).element.appendChild(this.onRenderTooltip()[0]);
 
         var screenPosition: Point = this._textEditor.screenPositionForBufferPosition(this._textEditor.getCursorBufferPosition());
@@ -41,6 +44,9 @@ class SignatureHelpItemsTooltipView extends SpacePen.View
     {
         if (this._overlayDecoration)
             this._overlayDecoration.destroy();
+
+        while ((<any>this).element.firstChild)
+            (<any>this).element.removeChild((<any>this).element.firstChild);
     }
 
     public setHelpItems(signatureHelpItems: ts.SignatureHelpItems)

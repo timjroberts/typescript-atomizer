@@ -124,6 +124,16 @@ interface Decoration
     destroy(): void;
 }
 
+interface CursorPositionChangeEventData
+{
+    oldBufferPosition: Point;
+    oldScreenPosition: Point;
+    newBufferPosition: Point;
+    newScreenPosition: Point;
+    textChanged: boolean;
+    cursor: Cursor;
+}
+
 interface Cursor
 {
     getScreenPosition(): Point;
@@ -136,7 +146,7 @@ interface Cursor
 
     getScopeDescriptor(): ScopeDescriptor;
 
-    onDidChangePosition(callback: (event: any) => void): Disposable;
+    onDidChangePosition(callback: (event: CursorPositionChangeEventData) => void): Disposable;
 }
 
 interface ScopeDescriptor

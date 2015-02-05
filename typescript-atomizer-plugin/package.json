@@ -1,6 +1,6 @@
 {
     "name": "typescript-atomizer",
-    "version": "0.2.1",
+    "version": "0.3.1",
     "description": "An Atom plugin that provides TypeScript language support and tooling.",
     "repository":
     {
@@ -25,7 +25,8 @@
         "rx": "*",
         "space-pen": "*",
         "atomizer-core": "*",
-        "atomizer-views": "*"
+        "atomizer-views": "*",
+        "machina": "0.4.x"
     },
     "devDependencies":
     {
