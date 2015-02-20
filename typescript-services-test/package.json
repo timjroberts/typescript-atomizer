@@ -1,0 +1,21 @@
+{
+    "name": "typescript-services-test",
+    "version": "0.0.0",
+    "description": "An adapter layer for all versions of TypeScript services.",
+    "author":
+    {
+        "name": "Tim Roberts",
+        "url": "http://www.timjroberts.com"
+    },
+    "dependencies":
+    {
+        "mocha": "*",
+        "architect": "*",
+        "typescript-services": "*"
+    },
+    "devDependencies":
+    {
+        "grunt-typescript": "*",
+        "grunt-mocha-cli": "*"
+    }
+}

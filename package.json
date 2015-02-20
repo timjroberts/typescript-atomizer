@@ -11,6 +11,7 @@
     "devDependencies":
     {
         "grunt": "*",
+        "grunt-typescript": "*",
         "grunt-run-grunt": "*"
     }
 }

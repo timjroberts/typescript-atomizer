@@ -13,21 +13,11 @@ module.exports = function(grunt)
 
                 deployableGruntFiles:
                     [ "./typescript-atomizer-plugin/gruntfile.js" ],
+                testableGruntFiles:
+                    [ "./typescript-services-test/gruntfile.js" ],
 
                 run_grunt:
                     {
-                        options:
-                            {
-                                process: function(res)
-                                    {
-                                        if (res.fail) {
-                                            grunt.log.writeln("Error in " + res.src);
-                                            grunt.log.writeln(res.res.stdout);
-                                            grunt.log.writeln(res.res.stderr);
-                                        }
-                                    }
-                            },
-
                         build:
                             {
                                 src: "<%=gruntFiles %>",
@@ -36,7 +26,7 @@ module.exports = function(grunt)
 
                         test:
                             {
-                                src: "<%=gruntFiles %>",
+                                src: "<%=testableGruntFiles %>",
                                 options: { task: "test" }
                             },
 

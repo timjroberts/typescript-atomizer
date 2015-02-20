@@ -1,8 +1,8 @@
 {
     "links":
     {
-        "atomizer-core": "atomizer-core",
-        "atomizer-views": "atomizer-views",
-        "typescript-atomizer": "typescript-atomizer-plugin"
+        "typescript-core": "typescript-core",
+        "typescript-1.3.0": "typescript-1.3.0",
+        "typescript-services": "typescript-services"
     }
 }
