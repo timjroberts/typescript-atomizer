@@ -1,15 +1,15 @@
-declare enum ModuleKind {
+export enum ModuleKind {
     None,
     CommonJS,
     AMD,
 }
 
-declare enum ScriptTarget {
+export enum ScriptTarget {
     ES3,
     ES5,
 }
 
-interface CompilerOptions {
+export interface Options {
     noLib: boolean;
     noResolve: boolean;
     module?: ModuleKind;
@@ -17,8 +17,4 @@ interface CompilerOptions {
     target?: ScriptTarget;
 
     [option: string]: any;
-}
-
-interface IDocumentRegistry {
-
 }

@@ -1,33 +1,18 @@
-/// <reference path="./ITypeScriptLanguageService.d.ts" />
-/// <reference path="./ITypeScriptServicesFactory.d.ts" />
 /// <reference path="../typescript-core/typescript-core.d.ts" />
 
+import LanguageService = require("typescript-core/LanguageService");
 import DocumentRegistry = require("typescript-core/DocumentRegistry");
+import TypeScriptLanguageService = require("typescript-core/TypeScriptLanguageService");
+import TypeScriptService = require("./TypeScriptService");
 
-class TypeScriptService implements ITypeScriptService {
-    private _languageService: ITypeScriptLanguageService;
-
-    constructor(languageService: ITypeScriptLanguageService) {
-        this._languageService = languageService;
-    }
-
-    public createDocumentRegistry(): IDocumentRegistry {
-        return this._languageService.createDocumentRegistry();
-    }
-
-    public createLanguageService(path: string, documentRegistry: IDocumentRegistry): ILanguageService {
-        return this._languageService.createLanguageService(path, documentRegistry);
-    }
-}
-
-class TypeScriptServicesFactory implements ITypeScriptServicesFactory {
+class TypeScriptServicesFactory {
     private _languageServices = { };
 
-    public registerLanguageService(service: ITypeScriptLanguageService): void {
+    public registerLanguageService(service: TypeScriptLanguageService): void {
         this._languageServices[service.tsLanguageServiceVersion] = service;
     }
 
-    public getTypeScriptServiceForVersion(version: string): ITypeScriptService {
+    public getTypeScriptServiceForVersion(version: string): TypeScriptService {
         var languageService = this._languageServices[version];
 
         if (!languageService)

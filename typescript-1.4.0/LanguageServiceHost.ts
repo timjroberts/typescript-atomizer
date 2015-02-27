@@ -1,4 +1,4 @@
-/// <reference path="./typescript-1-3-0.d.ts" />
+/// <reference path="./typescript-1-4-0.d.ts" />
 /// <reference path="../typescript-core/typescript-core.d.ts" />
 
 import ts = require("ts");
@@ -14,6 +14,8 @@ class LanguageServiceHost implements ts.LanguageServiceHost {
     constructor(path: string, documentRegistry: DocumentRegistry) {
         this._path = PathUtils.normalizePath(path);
         this._documentRegistry = documentRegistry;
+
+        this.getScriptFileNames();
     }
 
     public log(message: string): void {
@@ -48,8 +50,8 @@ class LanguageServiceHost implements ts.LanguageServiceHost {
         return false;
     }
 
-    public getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
-        return TypeScript.ScriptSnapshot.fromString(this._documentRegistry.getScriptText(fileName));
+    public getScriptSnapshot(fileName: string): ts.IScriptSnapshot {
+        return ts.ScriptSnapshot.fromString(this._documentRegistry.getScriptText(fileName));
     }
 
     public getLocalizedDiagnosticMessages(): any {
@@ -58,6 +60,10 @@ class LanguageServiceHost implements ts.LanguageServiceHost {
 
     public getCancellationToken(): ts.CancellationToken {
         return null;
+    }
+
+    public getCurrentDirectory(): string {
+        return PathUtils.getDirectoryPath(this._path);
     }
 
     public getDefaultLibFilename(): string {

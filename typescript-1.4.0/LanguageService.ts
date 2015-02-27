@@ -1,4 +1,4 @@
-/// <reference path="./typescript-1-3-0.d.ts" />
+/// <reference path="./typescript-1-4-0.d.ts" />
 /// <reference path="../typescript-core/typescript-core.d.ts" />
 
 import ts = require("ts");

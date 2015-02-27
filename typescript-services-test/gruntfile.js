@@ -10,7 +10,8 @@ module.exports = function(grunt)
                         "**/*.ts",
                         "!node_modules/**/*",
                         "!typings/**/*",
-                        "!*.d.ts"
+                        "!*.d.ts",
+                        "!test/test-files/**/*"
                     ],
 
                 typescript:

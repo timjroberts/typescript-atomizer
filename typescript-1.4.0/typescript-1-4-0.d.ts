@@ -1,5 +1,21 @@
 declare module ts
 {
+    export interface IScriptSnapshot
+    {
+        getText(start: number, end: number): string;
+
+        getLength(): number;
+
+        getLineStartPositions(): number[];
+
+        getTextChangeRangeSinceVersion(scriptVersion: number): TextChangeRange;
+    }
+
+    export module ScriptSnapshot
+    {
+        export function fromString(text: string): IScriptSnapshot;
+    }
+
     export enum ModuleKind {
         None,
         CommonJS,
@@ -141,7 +157,7 @@ declare module ts
         getSourceUnit(): any; // TypeScript.SourceUnitSyntax;
         getSyntaxTree(): any; // TypeScript.SyntaxTree;
         getBloomFilter(): any; // TypeScript.BloomFilter;
-        update(scriptSnapshot: TypeScript.IScriptSnapshot, version: number, isOpen: boolean, textChangeRange: TypeScript.TextChangeRange): SourceFile;
+        update(scriptSnapshot: IScriptSnapshot, version: number, isOpen: boolean, textChangeRange: TextChangeRange): SourceFile;
     }
 
     export interface DocumentRegistry
@@ -149,7 +165,7 @@ declare module ts
         acquireDocument(
             filename: string,
             compilationSettings: CompilerOptions,
-            scriptSnapshot: TypeScript.IScriptSnapshot,
+            scriptSnapshot: IScriptSnapshot,
             version: string,
             isOpen: boolean): SourceFile;
 
@@ -157,10 +173,10 @@ declare module ts
             soruceFile: ts.SourceFile,
             filename: string,
             compilationSettings: CompilerOptions,
-            scriptSnapshot: TypeScript.IScriptSnapshot,
+            scriptSnapshot: IScriptSnapshot,
             version: string,
             isOpen: boolean,
-            textChangeRange: TypeScript.TextChangeRange): SourceFile;
+            textChangeRange: TextChangeRange): SourceFile;
 
         releaseDocument(filename: string, compilationSettings: CompilerOptions): void
     }
@@ -279,9 +295,10 @@ declare module ts
         getScriptFileNames(): string[];
         getScriptVersion(fileName: string): string;
         getScriptIsOpen(fileName: string): boolean;
-        getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot;
+        getScriptSnapshot(fileName: string): IScriptSnapshot;
         getLocalizedDiagnosticMessages(): any;
         getCancellationToken(): CancellationToken;
+        getCurrentDirectory(): string;
         getDefaultLibFilename(): string;
     }
 
@@ -317,6 +334,24 @@ declare module ts
     export function normalizePath(path: string): string;
 
     export function getDirectoryPath(path: string): string;
+
+    export interface TextChangeRange
+    {
+    }
+}
+
+interface tsModule {
+    createLanguageService(host: ts.LanguageServiceHost, documentRegistry: ts.DocumentRegistry): ts.LanguageService
+
+    createSourceFile(filename: string, sourceText: string, languageVersion: ts.ScriptTarget, version: string, isOpen: boolean): ts.SourceFile;
+
+    isRootedDiskPath(path: string): boolean;
+
+    combinePaths(path1: string, path2: string): string;
+
+    normalizePath(path: string): string;
+
+    getDirectoryPath(path: string): string;
 }
 
 declare module TypeScript
@@ -330,26 +365,6 @@ declare module TypeScript
         }
 
         export function parseLineStarts(text: ICharacterSequence): number[];
-    }
-
-    export interface IScriptSnapshot
-    {
-        getText(start: number, end: number): string;
-
-        getLength(): number;
-
-        getLineStartPositions(): number[];
-
-        getTextChangeRangeSinceVersion(scriptVersion: number): TextChangeRange;
-    }
-
-    export class TextChangeRange
-    {
-    }
-
-    export class ScriptSnapshot
-    {
-        public static fromString(text: string): IScriptSnapshot;
     }
 
     export function switchToForwardSlashes(filename): string;

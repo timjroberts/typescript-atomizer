@@ -1,4 +1,4 @@
-/// <reference path="./typescript-1-3-0.d.ts" />
+/// <reference path="./typescript-1-4-0.d.ts" />
 /// <reference path="../typings/node/path.d.ts" />
 /// <reference path="../typings/node/fs.d.ts" />
 /// <reference path="../typescript-core/typescript-core.d.ts" />
@@ -15,12 +15,12 @@ class DocumentRegistry extends BaseDocumentRegistry implements ts.DocumentRegist
         super();
     }
 
-    public acquireDocument(path: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: TypeScript.IScriptSnapshot, version: string, isOpen: boolean): ts.SourceFile
+    public acquireDocument(path: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: ts.IScriptSnapshot, version: string, isOpen: boolean): ts.SourceFile
     {
         return ts.createSourceFile(path, super.captureTypeScriptDocument(path, true), compilationSettings.target, version.toString(), false);
     }
 
-    public updateDocument(soruceFile: ts.SourceFile, path: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: TypeScript.IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: TypeScript.TextChangeRange): ts.SourceFile
+    public updateDocument(soruceFile: ts.SourceFile, path: string, compilationSettings: ts.CompilerOptions, scriptSnapshot: ts.IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: ts.TextChangeRange): ts.SourceFile
     {
         return ts.createSourceFile(path, super.captureTypeScriptDocument(path, false), compilationSettings.target, version.toString(), false);
     }

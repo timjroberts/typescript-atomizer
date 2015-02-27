@@ -1,0 +1,25 @@
+{
+    "name": "typescript-1.4.0",
+    "version": "1.4.0",
+    "description": "A TypeScript service plugin for TypeScript 1.4.",
+    "keywords": [ "typescript", "ts" ],
+    "author":
+    {
+        "name": "Tim Roberts",
+        "url": "http://www.timjroberts.com"
+    },
+    "dependencies":
+    {
+        "typescript-core": "*"
+    },
+    "devDependencies":
+    {
+        "grunt-string-replace": "^1.0.0",
+        "grunt-typescript": "*"
+    },
+    "main": "./typescript-1-4-0-plugin.js",
+    "plugin":
+    {
+        "provides": ["typescript_1_4_0"]
+    }
+}

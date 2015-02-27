@@ -4,6 +4,7 @@
 
 import assert = require("assert");
 import typescriptServices = require("typescript-services");
+import TypeScriptServicesFactory = require("typescript-services/TypeScriptServicesFactory");
 
 describe("TypeScriptServices", () => {
     describe("can load configured language service versions", () => {
@@ -12,7 +13,7 @@ describe("TypeScriptServices", () => {
                 assert.ok(obj);
                 assert.ok(obj.typescriptServicesFactory);
 
-                var factory: ITypeScriptServicesFactory = obj.typescriptServicesFactory;
+                var factory: TypeScriptServicesFactory = obj.typescriptServicesFactory;
 
                 var tsV130 = factory.getTypeScriptServiceForVersion("1.3.0");
 
@@ -22,6 +23,19 @@ describe("TypeScriptServices", () => {
             });
         });
 
-        it("should load version 1.4");
+        it("should load version 1.4", (done: Function) => {
+            typescriptServices({ }, { }, (_, obj: any) => {
+                assert.ok(obj);
+                assert.ok(obj.typescriptServicesFactory);
+
+                var factory: TypeScriptServicesFactory = obj.typescriptServicesFactory;
+
+                var tsV130 = factory.getTypeScriptServiceForVersion("1.4.0");
+
+                assert.ok(tsV130);
+
+                done();
+            });
+        });
     });
 });

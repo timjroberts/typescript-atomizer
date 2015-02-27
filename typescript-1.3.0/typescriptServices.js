@@ -13,10 +13,6 @@ See the Apache Version 2.0 License for specific language governing permissions
 and limitations under the License.
 ***************************************************************************** */
 
-var DocumentRegistry = require('./DocumentRegistry');
-var LanguageServiceHost = require('./LanguageServiceHost');
-var LanguageService = require('./LanguageService');
-
 var ts;
 (function (ts) {
     ts.Diagnostics = {
@@ -36538,18 +36534,7 @@ var TypeScript;
     })(Services = TypeScript.Services || (TypeScript.Services = {}));
 })(TypeScript || (TypeScript = {}));
 
-module.exports = function setup(options, imports, register) {
-    register(null, {
-        typescript_1_3_0: {
-            tsLanguageServiceVersion: "1.3.0",
-            ts: ts,
-            TypeScript: TypeScript,
-            createDocumentRegistry: function() {
-                return new DocumentRegistry();
-            },
-            createLanguageService: function(path, documentRegistry) {
-                return new LanguageService(path, ts.createLanguageService(new LanguageServiceHost(path, documentRegistry, ts, TypeScript), documentRegistry));
-            }
-          }
-      });
+module.exports = {
+  ts: ts,
+  TypeScript: TypeScript
 };

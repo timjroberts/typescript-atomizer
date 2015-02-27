@@ -42,7 +42,7 @@ function getRootLength(path: string): number {
     return 0;
 }
 
-function getNormalizedParts(normalizedSlashedPath: string, rootLength: number) {
+function getNormalizedParts(normalizedSlashedPath: string, rootLength: number): string[] {
     var parts = normalizedSlashedPath.substr(rootLength).split(directorySeparator);
     var normalized: string[] = [];
 
@@ -60,4 +60,16 @@ function getNormalizedParts(normalizedSlashedPath: string, rootLength: number) {
     }
 
     return normalized;
+}
+
+export function getDirectoryPath(path: string): string {
+    return path.substr(0, Math.max(getRootLength(path), path.lastIndexOf(directorySeparator)));
+}
+
+export function isRootedDiskPath(path: string): boolean {
+    return getRootLength(path) !== 0;
+}
+
+export function isRelativePath(path: string): boolean {path
+    return path.substr(0, 2) === "./" || path.substr(0, 3) === "../" || path.substr(0, 2) === ".\\" || path.substr(0, 3) === "..\\";
 }

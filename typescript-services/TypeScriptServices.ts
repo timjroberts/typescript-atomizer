@@ -1,9 +1,9 @@
 /// <reference path="../typings/architect/architect.d.ts" />
 /// <reference path="../typings/node/path.d.ts" />
-/// <reference path="./ITypeScriptLanguageService.d.ts" />
 
 import path = require("path");
 import architect = require("architect");
+import TypeScriptLanguageService = require("typescript-core/TypeScriptLanguageService");
 import TypeScriptServicesFactory = require("./TypeScriptServicesFactory");
 
 function initializeTypeScriptServices(options: any, imports: any, register: architect.RegisterFunction) {
@@ -13,7 +13,7 @@ function initializeTypeScriptServices(options: any, imports: any, register: arch
 
     var app = architect.createApp(config);
 
-    app.on("service", (name: string, languageService: ITypeScriptLanguageService) => {
+    app.on("service", (name: string, languageService: TypeScriptLanguageService) => {
             servicesFactory.registerLanguageService(languageService);
         });
 

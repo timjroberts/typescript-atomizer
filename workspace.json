@@ -3,6 +3,7 @@
     {
         "typescript-core": "typescript-core",
         "typescript-1.3.0": "typescript-1.3.0",
+        "typescript-1.4.0": "typescript-1.4.0",
         "typescript-services": "typescript-services"
     }
 }

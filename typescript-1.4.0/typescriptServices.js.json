@@ -1,0 +1,9 @@
+{
+    "changes": [
+        {
+            "line"  : 32504,
+            "before": "this.syntaxTree = TypeScript.Parser.parse(this.filename, TypeScript.SimpleText.fromScriptSnapshot(this.scriptSnapshot), this.languageVersion, this.isDeclareFile());",
+            "after" : "this.syntaxTree = TypeScript.Parser.parse(this.filename, TypeScript.SimpleText.fromScriptSnapshot(TypeScript.ScriptSnapshot.fromString(this.text)), this.languageVersion, this.isDeclareFile());"
+        }
+    ]
+}
