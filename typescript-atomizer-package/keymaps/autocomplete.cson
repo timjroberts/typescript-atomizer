@@ -1,0 +1,4 @@
+"atom-text-editor[data-grammar='source typescript']":
+    "ctrl-space": "typescript-atomizer-autocomplete:toggle",
+    "f12": "typescript-atomizer:goto-definitions",
+    "alt-\\": "typescript-atomizer-findmembers:toggle"

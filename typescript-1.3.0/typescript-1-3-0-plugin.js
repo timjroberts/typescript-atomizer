@@ -7,8 +7,6 @@ module.exports = function setup(options, imports, register) {
     register(null, {
         typescript_1_3_0: {
             tsLanguageServiceVersion: "1.3.0",
-            ts: typescriptServices.ts,
-            TypeScript: typescriptServices.TypeScript,
             createDocumentRegistry: function() {
                 return new DocumentRegistry();
             },

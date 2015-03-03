@@ -13,6 +13,9 @@ interface NumberIndexDictionary<T> {
     [key: number]: T;
 }
 
+/**
+ * A private representation of a TypeScript document.
+ */
 class TypeScriptDocument {
     private _path: string;
     private _textInfoProvider: TextInfoProviderFuncs;
@@ -62,8 +65,14 @@ class TypeScriptDocument {
     }
 }
 
+/**
+ * A base Document Registry.
+ */
 class DocumentRegistry {
-    private static staticFileTextInfoProvider: TextInfoProviderFuncs
+    /**
+     * TextInfo provider functions that assume that a path yields a file on disk.
+     */
+    private static diskFileTextInfoProvider: TextInfoProviderFuncs
         = {
             textProvider:    (path) => fs.readFileSync(path, "utf8"),
             versionProvider: (path) => 1
@@ -71,10 +80,16 @@ class DocumentRegistry {
 
     private _typescriptDocuments: StringIndexDictionary<TypeScriptDocument> = { };
 
+    /**
+     * Initializes the DocumentRegistry instance.
+     */
     constructor() {
         this.getOrCreateTypeScriptDocument(this.getDefaultLibPath()).addReference();
     }
 
+    /**
+     * Gets the path to the default TypeScript library declaration file.
+     */
     public get defaultLibPath(): string {
         return PathUtils.normalizePath(this.getDefaultLibPath());
     }
@@ -89,6 +104,14 @@ class DocumentRegistry {
         };
     }
 
+    /**
+     * Retrieves the list of paths that define the TypeScript project beginning with a given path.
+     *
+     * References and imported modules path are recursively scanned to return the complete set of known paths.
+     *
+     * @param path The path from which to begin.
+     * @returns An array of paths that are referenced or imported into the given path.
+     */
     public getScriptFileNames(path: string): string[] {
         var compileOptions = this.getScriptCompilationOptions(path);
 
@@ -102,12 +125,24 @@ class DocumentRegistry {
             .concat(this.walkCompiledReferencePaths(path, compiledSource, PathUtils.getDirectoryPath(path), compileOptions.target, [ ]));
     }
 
+    /**
+     * Returns the version number of the document identified by a given path.
+     *
+     * @param path The document path.
+     * @returns A number representing the version of the specified document path.
+     */
     public getScriptVersion(path: string): number {
         var typescriptDocument = this.getOrCreateTypeScriptDocument(path);
 
         return typescriptDocument.version;
     }
 
+    /**
+     * Returns the text of the document identified by a given path.
+     *
+     * @param path The document path.
+     * @returns A string containing the text of the specified document path.
+     */
     public getScriptText(path: string): string {
         var typescriptDocument = this.getOrCreateTypeScriptDocument(path);
 
@@ -200,6 +235,13 @@ class DocumentRegistry {
         return compiledSource;
     }
 
+    /**
+     * Returns a TypeScript document for a given path.
+     *
+     * If the document is not present in the registry then an Error is thrown.
+     *
+     * @param path The path for which a TypeScript document should be returned.
+     */
     private getTypeScriptDocument(path: string): TypeScriptDocument
     {
         var normalizedPath = PathUtils.normalizePath(path);
@@ -214,7 +256,11 @@ class DocumentRegistry {
     /**
      * Returns a TypeScript document for a given path.
      *
+     * If the document is not present in the registry then a default TypeScript document reference
+     * is created and added to th registry before being returned.
+     *
      * @param path The path for which a TypeScript document should be returned.
+     * @returns The TypeScript document that can be referenced by the supplied path.
      */
     private getOrCreateTypeScriptDocument(path: string): TypeScriptDocument
     {
@@ -223,7 +269,7 @@ class DocumentRegistry {
 
         if (!typescriptDocument)
         {
-            typescriptDocument = new TypeScriptDocument(normalizedPath, DocumentRegistry.staticFileTextInfoProvider);
+            typescriptDocument = new TypeScriptDocument(normalizedPath, DocumentRegistry.diskFileTextInfoProvider);
 
             this._typescriptDocuments[normalizedPath] = typescriptDocument;
         }

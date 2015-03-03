@@ -6,8 +6,16 @@ import architect = require("architect");
 import TypeScriptLanguageService = require("typescript-core/TypeScriptLanguageService");
 import TypeScriptServicesFactory = require("./TypeScriptServicesFactory");
 
-function initializeTypeScriptServices(options: any, imports: any, register: architect.RegisterFunction) {
-    var config = architect.loadConfig(path.join(__dirname, "TypeScriptServicesConfig.js"));
+/**
+ * The 'Architect' entry point that registers the TypeScript Services Factory as an
+ * available service.
+ *
+ * @param options A hash of the configuration options.
+ * @param imports A hash of the required 'services' required by the TypeScript Services plugin.
+ * @param register The callback to invoke in order to register the TypeScript Services Factory.
+ */
+function initializeTypeScriptServices(options: any, imports: any, register: architect.RegisterCallbackFunction) {
+    var config = architect.loadConfig(path.join(__dirname, "TypeScriptServicesConfig"));
 
     var servicesFactory = new TypeScriptServicesFactory();
 
